@@ -9,7 +9,7 @@ export function AssignmentTable({ results }: AssignmentTableProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">🚰 Delivery Assignment Table (Hungarian)</CardTitle>
+        <CardTitle className="text-lg">🚰 Delivery Assignment Table (Assignment Problem)</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
