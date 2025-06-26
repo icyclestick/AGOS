@@ -32,6 +32,7 @@ import {
   type WaterAllocation,
   type StationAssignment,
 } from "@/lib/algorithms";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export default function WaterDistributionDashboard() {
   // Static infrastructure data
@@ -369,178 +370,149 @@ export default function WaterDistributionDashboard() {
           <div className="space-y-6">
             {hasResults && systemState ? (
               <>
-                {/* A* Results */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <span className="text-blue-600">
-                        🔍 A* Shortage Prediction
-                      </span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {systemState.shortagePredictions
-                        .slice(0, 5)
-                        .map((prediction) => (
-                          <div
-                            key={prediction.barangay.id}
-                            className="flex justify-between items-center p-2 bg-gray-50 rounded"
-                          >
-                            <span className="font-medium">
-                              {prediction.barangay.name}
-                            </span>
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`px-2 py-1 rounded text-xs ${
-                                  prediction.status === "Critical"
-                                    ? "bg-red-100 text-red-800"
-                                    : prediction.status === "Warning"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-green-100 text-green-800"
-                                }`}
-                              >
-                                {prediction.status}
-                              </span>
-                              <span className="text-sm text-gray-600">
-                                {prediction.timeToShortage.toFixed(1)}h
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Knapsack Results */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <span className="text-green-600">
-                        🎒 Knapsack Water Allocation
-                      </span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {systemState.waterAllocations.map((allocation) => (
-                        <div
-                          key={allocation.station.id}
-                          className="flex justify-between items-center p-2 bg-gray-50 rounded"
-                        >
-                          <span className="font-medium">
-                            {allocation.station.name}
+                <Tabs defaultValue="shortage" className="w-full mt-8">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="shortage">A* Shortage Prediction</TabsTrigger>
+                    <TabsTrigger value="knapsack">Knapsack Water Allocation</TabsTrigger>
+                    <TabsTrigger value="assignment">Assignment</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="shortage">
+                    {/* A* Results */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <span className="text-blue-600">
+                            🔍 A* Shortage Prediction
                           </span>
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`px-2 py-1 rounded text-xs ${
-                                allocation.allocated
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
-                              }`}
-                            >
-                              {allocation.allocated
-                                ? "Allocated"
-                                : "Not Allocated"}
-                            </span>
-                            <span className="text-sm text-gray-600">
-                              {allocation.waterAllocated.toLocaleString()}L
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Assignment Results */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <span className="text-purple-600">
-                        🚰 Assignment Results
-                      </span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {systemState.stationAssignments.map((assignment) => (
-                        <div
-                          key={assignment.station.id}
-                          className="p-4 bg-gray-50 rounded border"
-                        >
-                          <div className="font-medium mb-2 text-lg">
-                            {assignment.station.name}
-                          </div>
-                          <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
-                            <div>
-                              <span className="text-gray-600">Serves:</span>{" "}
-                              <span className="font-medium">
-                                {assignment.assignedBarangays.length} barangays
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-gray-600">
-                                Water Delivered:
-                              </span>{" "}
-                              <span className="font-medium text-green-600">
-                                {assignment.totalWaterDelivered.toLocaleString()}
-                                L
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-gray-600">
-                                Total Distance:
-                              </span>{" "}
-                              <span className="font-medium">
-                                {assignment.totalDistance}km
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Assigned Barangays List */}
-                          <div className="mt-3">
-                            <div className="text-sm font-medium text-gray-700 mb-2">
-                              Assigned Barangays:
-                            </div>
-                            <div className="space-y-1">
-                              {assignment.assignedBarangays.map((barangay) => {
-                                // Find the distance for this specific assignment
-                                const assignmentData = assignmentMatrix.find(
-                                  (am) =>
-                                    am.stationId === assignment.station.id &&
-                                    am.barangayId === barangay.id
-                                );
-                                const distance = assignmentData?.distance || 0;
-
-                                return (
-                                  <div
-                                    key={barangay.id}
-                                    className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-purple-300"
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {systemState.shortagePredictions
+                            .slice(0, 5)
+                            .map((prediction) => (
+                              <div
+                                key={prediction.barangay.id}
+                                className="flex justify-between items-center p-2 bg-gray-50 rounded"
+                              >
+                                <span className="font-medium">
+                                  {prediction.barangay.name}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={`px-2 py-1 rounded text-xs ${
+                                      prediction.status === "Critical"
+                                        ? "bg-red-100 text-red-800"
+                                        : prediction.status === "Warning"
+                                        ? "bg-yellow-100 text-yellow-800"
+                                        : "bg-green-100 text-green-800"
+                                    }`}
                                   >
-                                    <span className="font-medium text-gray-800">
+                                    {prediction.status}
+                                  </span>
+                                  <span className="text-sm text-gray-600">
+                                    {prediction.timeToShortage.toFixed(1)}h
+                                  </span>
+                                  {prediction.status === "Critical" && prediction.waterNeededToBeSafe !== undefined && (
+                                    <span className="ml-2 px-2 py-1 rounded text-xs bg-red-200 text-red-900 font-semibold">
+                                      Needs {Math.ceil(prediction.waterNeededToBeSafe).toLocaleString()}L to be Safe
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                  <TabsContent value="knapsack">
+                    {/* Knapsack Results */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <span className="text-green-600">
+                            🎒 Knapsack Water Allocation
+                          </span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {systemState.waterAllocations.map((allocation) => (
+                            <div
+                              key={allocation.station.id}
+                              className="flex justify-between items-center p-2 bg-gray-50 rounded"
+                            >
+                              <span className="font-medium">
+                                {allocation.station.name}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`px-2 py-1 rounded text-xs ${
+                                    allocation.allocated
+                                      ? "bg-green-100 text-green-800"
+                                      : "bg-red-100 text-red-800"
+                                  }`}
+                                >
+                                  {allocation.allocated
+                                    ? "Allocated"
+                                    : "Not Allocated"}
+                                </span>
+                                <span className="text-sm text-gray-600">
+                                  {allocation.waterAllocated.toLocaleString()}L
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                  <TabsContent value="assignment">
+                    {/* Assignment Results */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <span className="text-purple-600">
+                            🚰 Assignment
+                          </span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {systemState.stationAssignments.map((assignment) => (
+                            <div
+                              key={assignment.station.id}
+                              className="flex flex-col gap-1 p-2 bg-gray-50 rounded"
+                            >
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium">
+                                  {assignment.station.name}
+                                </span>
+                                <span className="text-sm text-gray-600">
+                                  Total Delivered: {assignment.totalWaterDelivered.toLocaleString()}L
+                                </span>
+                              </div>
+                              <div className="flex flex-wrap gap-2 mt-1">
+                                {assignment.assignedBarangays.length > 0 ? (
+                                  assignment.assignedBarangays.map((barangay) => (
+                                    <span
+                                      key={barangay.id}
+                                      className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800"
+                                    >
                                       {barangay.name}
                                     </span>
-                                    <span className="text-sm text-gray-600">
-                                      {distance}km away
-                                    </span>
-                                  </div>
-                                );
-                              })}
+                                  ))
+                                ) : (
+                                  <span className="text-xs text-gray-400">No barangays assigned</span>
+                                )}
+                              </div>
                             </div>
-                          </div>
+                          ))}
                         </div>
-                      ))}
-
-                      {systemState.stationAssignments.length === 0 && (
-                        <div className="text-center py-4 text-gray-500">
-                          No assignments made. No pumping stations received
-                          water allocation.
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </Tabs>
 
                 {/* Summary Metrics */}
                 <Card>

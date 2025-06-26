@@ -16,8 +16,10 @@ import type {
 // Algorithm 1: A* for Shortage Prediction (Barangay-level)
 export function predictShortages(
   barangays: Barangay[],
-  liveBarangayData: LiveBarangayData[]
+  liveBarangayData: LiveBarangayData[],
+  userInput: UserInput
 ): ShortagePrediction[] {
+  const threshold = 20; // L/s threshold for safety
   const predictions: ShortagePrediction[] = barangays.map(barangay => {
     const liveData = liveBarangayData.find(d => d.barangayId === barangay.id)
     if (!liveData) {
@@ -30,33 +32,31 @@ export function predictShortages(
         status: "Safe"
       }
     }
-
-    // A* scoring
-    const gScore = 50 - liveData.currentFlowRate // flow drop experienced (scaled)
+    const gScore = 50 - liveData.currentFlowRate
     const hScore = liveData.dropRate > 0 ?
-      (liveData.currentFlowRate - 20) / liveData.dropRate : // time to shortage (assuming threshold of 20 L/s)
+      (liveData.currentFlowRate - threshold) / liveData.dropRate :
       Infinity
     const fScore = gScore + hScore
-
-    // Status determination
     let status: "Safe" | "Warning" | "Critical" = "Safe"
-    if (liveData.currentFlowRate <= 20) { // threshold
+    if (liveData.currentFlowRate < threshold) {
       status = "Critical"
-    } else if (hScore <= 1) { // less than 1 hour to shortage
+    } else if (liveData.currentFlowRate === threshold || hScore <= 1) {
       status = "Warning"
     }
-
+    let waterNeededToBeSafe: number | undefined = undefined;
+    if (status === "Critical" && liveData) {
+      waterNeededToBeSafe = Math.max(0, threshold - liveData.currentFlowRate) * userInput.emergencyDuration * 3600;
+    }
     return {
       barangay,
       gScore: Math.round(gScore * 10) / 10,
       hScore: Math.round(hScore * 10) / 10,
       fScore: Math.round(fScore * 10) / 10,
       timeToShortage: Math.round(hScore * 10) / 10,
-      status
+      status,
+      waterNeededToBeSafe
     }
   })
-
-  // Sort by fScore (highest risk first)
   return predictions.sort((a, b) => b.fScore - a.fScore)
 }
 
@@ -197,7 +197,7 @@ export function runEmergencyWaterSystem(
   userInput: UserInput
 ): SystemState {
   // Step 1: A* Shortage Prediction
-  const shortagePredictions = predictShortages(barangays, liveBarangayData)
+  const shortagePredictions = predictShortages(barangays, liveBarangayData, userInput)
 
   // Step 2: Knapsack Water Allocation
   const waterAllocations = allocateWater(pumpingStations, liveStationData, liveTowerData, userInput)
@@ -237,3 +237,5 @@ export function runEmergencyWaterSystem(
     barangaysNotHelped
   }
 }
+
+export type { ShortagePrediction, WaterAllocation, StationAssignment };

@@ -69,6 +69,7 @@ export interface ShortagePrediction {
   fScore: number // total risk score
   timeToShortage: number // hours
   status: "Safe" | "Warning" | "Critical"
+  waterNeededToBeSafe?: number // amount of water needed to be safe (liters)
 }
 
 export interface WaterAllocation {
