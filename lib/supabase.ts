@@ -6,172 +6,179 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 export const isSupabaseConfigured = !!(supabaseUrl && supabaseKey)
 export const supabase = isSupabaseConfigured ? createClient(supabaseUrl!, supabaseKey!) : null
 
-export type Barangay = {
+// Complete data structure for 3-algorithm water distribution system
+
+// 1. Predefined (Static) Data
+export interface WaterTower {
   id: string
   name: string
-  current_level: number
-  daily_consumption: number
-  shortage_threshold: number
+  location: { lat: number, lng: number }
+  maxCapacity: number // liters
+}
+
+export interface PumpingStation {
+  id: string
+  name: string
+  location: { lat: number, lng: number }
+  thresholdFlowRate: number // minimum required L/s
   priority: number
-  water_needed: number
-  population: number
-  latitude: number
-  longitude: number
+  populationServed: number
 }
 
-export type PumpingStation = {
+export interface Barangay {
   id: string
   name: string
-  capacity: number
-  latitude: number
-  longitude: number
+  location: { lat: number, lng: number }
 }
 
-export type CostMatrix = {
-  station_id: string
-  barangay_id: string
-  cost: number
-  distance: number
+// Distance/cost matrix for assignment problem
+export interface AssignmentMatrix {
+  stationId: string
+  barangayId: string
+  distance: number // km
+  cost: number // can be distance, time, or pipe losses
 }
 
-// Enhanced mock data with Manila coordinates and population
+// 2. Live Data (from sensors/SCADA)
+export interface LiveBarangayData {
+  barangayId: string
+  currentFlowRate: number // L/s from sensors
+  dropRate: number // L/s per hour (depreciation rate)
+}
+
+export interface LiveTowerData {
+  towerId: string
+  currentWater: number // liters available
+}
+
+export interface LiveStationData {
+  stationId: string
+  currentFlowRate: number // L/s output
+}
+
+// 3. User-Defined Data
+export interface UserInput {
+  emergencyDuration: number // hours
+}
+
+// 4. Algorithm Results
+export interface ShortagePrediction {
+  barangay: Barangay
+  gScore: number // flow drop experienced
+  hScore: number // time to shortage
+  fScore: number // total risk score
+  timeToShortage: number // hours
+  status: "Safe" | "Warning" | "Critical"
+}
+
+export interface WaterAllocation {
+  station: PumpingStation
+  allocated: boolean
+  waterNeeded: number // liters
+  waterAllocated: number // liters
+  priority: number
+}
+
+export interface StationAssignment {
+  station: PumpingStation
+  assignedBarangays: Barangay[]
+  totalWaterDelivered: number // liters
+  totalDistance: number // km
+}
+
+// 5. Complete System State
+export interface SystemState {
+  // Static infrastructure
+  waterTowers: WaterTower[]
+  pumpingStations: PumpingStation[]
+  barangays: Barangay[]
+  assignmentMatrix: AssignmentMatrix[]
+
+  // Live data
+  liveBarangayData: LiveBarangayData[]
+  liveTowerData: LiveTowerData[]
+  liveStationData: LiveStationData[]
+
+  // User input
+  userInput: UserInput
+
+  // Algorithm results
+  shortagePredictions: ShortagePrediction[]
+  waterAllocations: WaterAllocation[]
+  stationAssignments: StationAssignment[]
+
+  // Summary metrics
+  totalWaterNeeded: number // liters
+  totalWaterAvailable: number // liters
+  totalWaterAllocated: number // liters
+  barangaysHelped: number
+  barangaysNotHelped: number
+}
+
+// Mock Data
+export const mockWaterTowers: WaterTower[] = [
+  { id: "WT1", name: "Tower 1", location: { lat: 14.6042, lng: 120.9542 }, maxCapacity: 100000 },
+  { id: "WT2", name: "Tower 2", location: { lat: 14.6142, lng: 120.9642 }, maxCapacity: 150000 },
+  { id: "WT3", name: "Tower 3", location: { lat: 14.6242, lng: 120.9742 }, maxCapacity: 120000 }
+]
+
+export const mockPumpingStations: PumpingStation[] = [
+  { id: "PS1", name: "Station 1", location: { lat: 14.6042, lng: 120.9542 }, thresholdFlowRate: 40, priority: 10, populationServed: 50000 },
+  { id: "PS2", name: "Station 2", location: { lat: 14.6142, lng: 120.9642 }, thresholdFlowRate: 35, priority: 8, populationServed: 30000 },
+  { id: "PS3", name: "Station 3", location: { lat: 14.6242, lng: 120.9742 }, thresholdFlowRate: 30, priority: 9, populationServed: 40000 }
+]
+
 export const mockBarangays: Barangay[] = [
-  {
-    id: "B1",
-    name: "Tondo",
-    current_level: 2500,
-    daily_consumption: 500,
-    shortage_threshold: 2000,
-    priority: 10,
-    water_needed: 5000,
-    population: 628106,
-    latitude: 14.6199,
-    longitude: 120.9647,
-  },
-  {
-    id: "B2",
-    name: "Binondo",
-    current_level: 1800,
-    daily_consumption: 300,
-    shortage_threshold: 1500,
-    priority: 8,
-    water_needed: 3500,
-    population: 12985,
-    latitude: 14.5995,
-    longitude: 120.9739,
-  },
-  {
-    id: "B3",
-    name: "Malate",
-    current_level: 3000,
-    daily_consumption: 600,
-    shortage_threshold: 2500,
-    priority: 9,
-    water_needed: 4000,
-    population: 77513,
-    latitude: 14.5648,
-    longitude: 120.9959,
-  },
-  {
-    id: "B4",
-    name: "Ermita",
-    current_level: 1200,
-    daily_consumption: 400,
-    shortage_threshold: 1000,
-    priority: 7,
-    water_needed: 6000,
-    population: 9618,
-    latitude: 14.5833,
-    longitude: 120.9833,
-  },
-  {
-    id: "B5",
-    name: "Sampaloc",
-    current_level: 2200,
-    daily_consumption: 450,
-    shortage_threshold: 1800,
-    priority: 9,
-    water_needed: 4500,
-    population: 192843,
-    latitude: 14.6042,
-    longitude: 121.0042,
-  },
-  {
-    id: "B6",
-    name: "Santa Mesa",
-    current_level: 1600,
-    daily_consumption: 350,
-    shortage_threshold: 1400,
-    priority: 6,
-    water_needed: 3000,
-    population: 99933,
-    latitude: 14.5986,
-    longitude: 121.0117,
-  },
-  {
-    id: "B7",
-    name: "Quiapo",
-    current_level: 2800,
-    daily_consumption: 550,
-    shortage_threshold: 2300,
-    priority: 8,
-    water_needed: 5500,
-    population: 24886,
-    latitude: 14.5958,
-    longitude: 120.9847,
-  },
-  {
-    id: "B8",
-    name: "San Nicolas",
-    current_level: 1400,
-    daily_consumption: 320,
-    shortage_threshold: 1200,
-    priority: 5,
-    water_needed: 2800,
-    population: 44241,
-    latitude: 14.6031,
-    longitude: 120.9764,
-  },
+  { id: "B1", name: "Barangay 1", location: { lat: 14.6042, lng: 120.9542 } },
+  { id: "B2", name: "Barangay 2", location: { lat: 14.6142, lng: 120.9642 } },
+  { id: "B3", name: "Barangay 3", location: { lat: 14.6242, lng: 120.9742 } },
+  { id: "B4", name: "Barangay 4", location: { lat: 14.6342, lng: 120.9842 } },
+  { id: "B5", name: "Barangay 5", location: { lat: 14.6442, lng: 120.9942 } }
 ]
 
-export const mockStations: PumpingStation[] = [
-  { id: "PS1", name: "Putatan Station", capacity: 10000, latitude: 14.6042, longitude: 120.9542 },
-  { id: "PS2", name: "Balara Station", capacity: 12000, latitude: 14.6847, longitude: 121.0736 },
-  { id: "PS3", name: "La Mesa Station", capacity: 8000, latitude: 14.7042, longitude: 121.0542 },
-  { id: "PS4", name: "Novaliches Station", capacity: 9500, latitude: 14.7236, longitude: 121.0347 },
+export const mockLiveBarangayData: LiveBarangayData[] = [
+  { barangayId: "B1", currentFlowRate: 25, dropRate: 2 },
+  { barangayId: "B2", currentFlowRate: 20, dropRate: 1.5 },
+  { barangayId: "B3", currentFlowRate: 35, dropRate: 1.8 },
+  { barangayId: "B4", currentFlowRate: 15, dropRate: 2.5 },
+  { barangayId: "B5", currentFlowRate: 28, dropRate: 1.2 }
 ]
 
-export const mockCostMatrix: CostMatrix[] = [
-  { station_id: "PS1", barangay_id: "B1", cost: 20, distance: 2.1 },
-  { station_id: "PS1", barangay_id: "B2", cost: 25, distance: 2.8 },
-  { station_id: "PS1", barangay_id: "B3", cost: 30, distance: 4.2 },
-  { station_id: "PS1", barangay_id: "B4", cost: 35, distance: 3.8 },
-  { station_id: "PS1", barangay_id: "B5", cost: 40, distance: 5.1 },
-  { station_id: "PS1", barangay_id: "B6", cost: 45, distance: 6.2 },
-  { station_id: "PS1", barangay_id: "B7", cost: 22, distance: 2.5 },
-  { station_id: "PS1", barangay_id: "B8", cost: 28, distance: 3.1 },
-  { station_id: "PS2", barangay_id: "B1", cost: 15, distance: 8.2 },
-  { station_id: "PS2", barangay_id: "B2", cost: 18, distance: 8.8 },
-  { station_id: "PS2", barangay_id: "B3", cost: 35, distance: 12.1 },
-  { station_id: "PS2", barangay_id: "B4", cost: 40, distance: 11.5 },
-  { station_id: "PS2", barangay_id: "B5", cost: 20, distance: 7.9 },
-  { station_id: "PS2", barangay_id: "B6", cost: 25, distance: 7.2 },
-  { station_id: "PS2", barangay_id: "B7", cost: 30, distance: 9.1 },
-  { station_id: "PS2", barangay_id: "B8", cost: 32, distance: 8.7 },
-  { station_id: "PS3", barangay_id: "B1", cost: 45, distance: 11.2 },
-  { station_id: "PS3", barangay_id: "B2", cost: 40, distance: 11.8 },
-  { station_id: "PS3", barangay_id: "B3", cost: 15, distance: 15.1 },
-  { station_id: "PS3", barangay_id: "B4", cost: 18, distance: 14.5 },
-  { station_id: "PS3", barangay_id: "B5", cost: 50, distance: 10.9 },
-  { station_id: "PS3", barangay_id: "B6", cost: 55, distance: 10.2 },
-  { station_id: "PS3", barangay_id: "B7", cost: 42, distance: 12.1 },
-  { station_id: "PS3", barangay_id: "B8", cost: 48, distance: 11.7 },
-  { station_id: "PS4", barangay_id: "B1", cost: 35, distance: 9.8 },
-  { station_id: "PS4", barangay_id: "B2", cost: 30, distance: 10.4 },
-  { station_id: "PS4", barangay_id: "B3", cost: 25, distance: 13.7 },
-  { station_id: "PS4", barangay_id: "B4", cost: 20, distance: 13.1 },
-  { station_id: "PS4", barangay_id: "B5", cost: 15, distance: 9.5 },
-  { station_id: "PS4", barangay_id: "B6", cost: 18, distance: 8.8 },
-  { station_id: "PS4", barangay_id: "B7", cost: 38, distance: 10.7 },
-  { station_id: "PS4", barangay_id: "B8", cost: 35, distance: 10.3 },
+export const mockLiveTowerData: LiveTowerData[] = [
+  { towerId: "WT1", currentWater: 80000 },
+  { towerId: "WT2", currentWater: 120000 },
+  { towerId: "WT3", currentWater: 90000 }
 ]
+
+export const mockLiveStationData: LiveStationData[] = [
+  { stationId: "PS1", currentFlowRate: 30 },
+  { stationId: "PS2", currentFlowRate: 25 },
+  { stationId: "PS3", currentFlowRate: 28 }
+]
+
+export const mockAssignmentMatrix: AssignmentMatrix[] = [
+  // Station 1 connections
+  { stationId: "PS1", barangayId: "B1", distance: 2.1, cost: 20 },
+  { stationId: "PS1", barangayId: "B2", distance: 3.2, cost: 25 },
+  { stationId: "PS1", barangayId: "B3", distance: 4.5, cost: 30 },
+  { stationId: "PS1", barangayId: "B4", distance: 5.8, cost: 35 },
+  { stationId: "PS1", barangayId: "B5", distance: 7.2, cost: 40 },
+
+  // Station 2 connections
+  { stationId: "PS2", barangayId: "B1", distance: 5.2, cost: 35 },
+  { stationId: "PS2", barangayId: "B2", distance: 2.8, cost: 22 },
+  { stationId: "PS2", barangayId: "B3", distance: 3.1, cost: 28 },
+  { stationId: "PS2", barangayId: "B4", distance: 4.3, cost: 32 },
+  { stationId: "PS2", barangayId: "B5", distance: 6.1, cost: 38 },
+
+  // Station 3 connections
+  { stationId: "PS3", barangayId: "B1", distance: 6.1, cost: 40 },
+  { stationId: "PS3", barangayId: "B2", distance: 4.8, cost: 32 },
+  { stationId: "PS3", barangayId: "B3", distance: 2.5, cost: 18 },
+  { stationId: "PS3", barangayId: "B4", distance: 3.7, cost: 25 },
+  { stationId: "PS3", barangayId: "B5", distance: 5.4, cost: 30 }
+]
+
+export const mockUserInput: UserInput = {
+  emergencyDuration: 2 // hours
+}

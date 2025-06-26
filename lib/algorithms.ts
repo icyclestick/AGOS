@@ -1,128 +1,239 @@
-import type { Barangay, PumpingStation, CostMatrix } from "./supabase"
+import type {
+  Barangay,
+  PumpingStation,
+  WaterTower,
+  AssignmentMatrix,
+  LiveBarangayData,
+  LiveTowerData,
+  LiveStationData,
+  UserInput,
+  ShortagePrediction,
+  WaterAllocation,
+  StationAssignment,
+  SystemState
+} from "./supabase"
 
-// A* Algorithm for Shortage Prediction
-export interface ShortageResult {
-  barangay: Barangay
-  daysToShortage: number
-  status: "Safe" | "Warning" | "Critical"
-}
-
-export function predictShortages(barangays: Barangay[]): ShortageResult[] {
-  return barangays.map((barangay) => {
-    const daysToShortage = Math.max(
-      0,
-      (barangay.current_level - barangay.shortage_threshold) / barangay.daily_consumption,
-    )
-
-    let status: "Safe" | "Warning" | "Critical" = "Safe"
-    if (daysToShortage <= 1) status = "Critical"
-    else if (daysToShortage <= 3) status = "Warning"
-
-    return {
-      barangay,
-      daysToShortage: Math.round(daysToShortage * 10) / 10,
-      status,
-    }
-  })
-}
-
-// Knapsack Algorithm for Resource Allocation
-export interface KnapsackResult {
-  barangay: Barangay
-  allocated: boolean
-  allocatedWater: number
-  efficiency: number
-}
-
-export function knapsackAllocation(barangays: Barangay[], totalSupply: number): KnapsackResult[] {
-  const items = barangays.map((barangay) => ({
-    barangay,
-    efficiency: barangay.priority / barangay.water_needed,
-    allocated: false,
-    allocatedWater: 0,
-  }))
-
-  items.sort((a, b) => b.efficiency - a.efficiency)
-
-  let remainingSupply = totalSupply
-
-  for (const item of items) {
-    if (remainingSupply >= item.barangay.water_needed) {
-      item.allocated = true
-      item.allocatedWater = item.barangay.water_needed
-      remainingSupply -= item.barangay.water_needed
-    }
-  }
-
-  return items
-}
-
-// Hungarian Algorithm for Assignment Problem
-export interface AssignmentResult {
-  station: PumpingStation
-  assignedBarangay: Barangay | null
-  distance: number
-  cost: number
-  waterDelivered: number
-}
-
-export function hungarianAssignment(
-  stations: PumpingStation[],
-  selectedBarangays: Barangay[],
-  costMatrix: CostMatrix[],
-): AssignmentResult[] {
-  const costs: { [stationId: string]: { [barangayId: string]: { cost: number; distance: number } } } = {}
-  costMatrix.forEach((entry) => {
-    if (!costs[entry.station_id]) costs[entry.station_id] = {}
-    costs[entry.station_id][entry.barangay_id] = { cost: entry.cost, distance: entry.distance }
-  })
-
-  const assignments: AssignmentResult[] = []
-  const assignedBarangays = new Set<string>()
-
-  // Sort barangays by priority (highest first)
-  const sortedBarangays = [...selectedBarangays].sort((a, b) => b.priority - a.priority)
-
-  for (const barangay of sortedBarangays) {
-    if (assignedBarangays.has(barangay.id)) continue
-
-    let bestStation: PumpingStation | null = null
-    let minCost = Number.POSITIVE_INFINITY
-    let bestDistance = 0
-
-    for (const station of stations) {
-      const stationData = costs[station.id]?.[barangay.id]
-      if (stationData && stationData.cost < minCost) {
-        minCost = stationData.cost
-        bestDistance = stationData.distance
-        bestStation = station
+// Algorithm 1: A* for Shortage Prediction (Barangay-level)
+export function predictShortages(
+  barangays: Barangay[],
+  liveBarangayData: LiveBarangayData[]
+): ShortagePrediction[] {
+  const predictions: ShortagePrediction[] = barangays.map(barangay => {
+    const liveData = liveBarangayData.find(d => d.barangayId === barangay.id)
+    if (!liveData) {
+      return {
+        barangay,
+        gScore: 0,
+        hScore: Infinity,
+        fScore: Infinity,
+        timeToShortage: Infinity,
+        status: "Safe"
       }
     }
 
-    if (bestStation) {
-      assignments.push({
-        station: bestStation,
-        assignedBarangay: barangay,
-        distance: bestDistance,
-        cost: minCost,
-        waterDelivered: barangay.water_needed,
+    // A* scoring
+    const gScore = 50 - liveData.currentFlowRate // flow drop experienced (scaled)
+    const hScore = liveData.dropRate > 0 ?
+      (liveData.currentFlowRate - 20) / liveData.dropRate : // time to shortage (assuming threshold of 20 L/s)
+      Infinity
+    const fScore = gScore + hScore
+
+    // Status determination
+    let status: "Safe" | "Warning" | "Critical" = "Safe"
+    if (liveData.currentFlowRate <= 20) { // threshold
+      status = "Critical"
+    } else if (hScore <= 1) { // less than 1 hour to shortage
+      status = "Warning"
+    }
+
+    return {
+      barangay,
+      gScore: Math.round(gScore * 10) / 10,
+      hScore: Math.round(hScore * 10) / 10,
+      fScore: Math.round(fScore * 10) / 10,
+      timeToShortage: Math.round(hScore * 10) / 10,
+      status
+    }
+  })
+
+  // Sort by fScore (highest risk first)
+  return predictions.sort((a, b) => b.fScore - a.fScore)
+}
+
+// Algorithm 2: Branch & Bound Knapsack for Water Allocation (Tower to Station)
+export function allocateWater(
+  pumpingStations: PumpingStation[],
+  liveStationData: LiveStationData[],
+  liveTowerData: LiveTowerData[],
+  userInput: UserInput
+): WaterAllocation[] {
+  const totalAvailableWater = liveTowerData.reduce((sum, tower) => sum + tower.currentWater, 0)
+
+  // Calculate water needed for each station
+  const items = pumpingStations.map(station => {
+    const liveData = liveStationData.find(d => d.stationId === station.id)
+    const currentFlow = liveData?.currentFlowRate || 0
+    const waterNeeded = Math.max(0, (station.thresholdFlowRate - currentFlow)) *
+      userInput.emergencyDuration * 3600 // convert to liters
+
+    return {
+      station,
+      waterNeeded,
+      priority: station.priority,
+      allocated: false,
+      waterAllocated: 0
+    }
+  })
+
+  // Simple greedy knapsack (can be replaced with proper branch & bound)
+  items.sort((a, b) => b.priority - a.priority)
+
+  let remainingWater = totalAvailableWater
+  const allocations: WaterAllocation[] = []
+
+  for (const item of items) {
+    if (remainingWater >= item.waterNeeded && item.waterNeeded > 0) {
+      allocations.push({
+        station: item.station,
+        allocated: true,
+        waterNeeded: item.waterNeeded,
+        waterAllocated: item.waterNeeded,
+        priority: item.priority
       })
-      assignedBarangays.add(barangay.id)
+      remainingWater -= item.waterNeeded
+    } else {
+      allocations.push({
+        station: item.station,
+        allocated: false,
+        waterNeeded: item.waterNeeded,
+        waterAllocated: 0,
+        priority: item.priority
+      })
     }
   }
 
-  // Add unassigned stations
-  for (const station of stations) {
-    if (!assignments.find((a) => a.station.id === station.id)) {
+  return allocations
+}
+
+// Algorithm 3: Heuristic Assignment for Station to Barangay
+export function assignStationsToBarangays(
+  barangays: Barangay[],
+  pumpingStations: PumpingStation[],
+  assignmentMatrix: AssignmentMatrix[],
+  waterAllocations: WaterAllocation[],
+  liveBarangayData: LiveBarangayData[]
+): StationAssignment[] {
+  // Get stations that received water allocation
+  const allocatedStations = waterAllocations.filter(wa => wa.allocated)
+
+  // Find barangays in need (below threshold)
+  const barangaysInNeed = barangays.filter(barangay => {
+    const liveData = liveBarangayData.find(d => d.barangayId === barangay.id)
+    return liveData && liveData.currentFlowRate <= 20 // threshold (changed from < to <=)
+  })
+
+  const assignments: StationAssignment[] = []
+
+  // For each allocated station, assign nearest barangays in need
+  for (const waterAllocation of allocatedStations) {
+    const station = waterAllocation.station
+    const assignedBarangays: Barangay[] = []
+    let totalDistance = 0
+
+    // Find barangays that can be served by this station
+    const possibleBarangays = barangaysInNeed.filter(barangay => {
+      const assignment = assignmentMatrix.find(am =>
+        am.stationId === station.id && am.barangayId === barangay.id
+      )
+      return assignment !== undefined
+    })
+
+    // Sort by distance (nearest first)
+    possibleBarangays.sort((a, b) => {
+      const distA = assignmentMatrix.find(am =>
+        am.stationId === station.id && am.barangayId === a.id
+      )?.distance || Infinity
+      const distB = assignmentMatrix.find(am =>
+        am.stationId === station.id && am.barangayId === b.id
+      )?.distance || Infinity
+      return distA - distB
+    })
+
+    // Assign barangays until station capacity is reached
+    let remainingCapacity = waterAllocation.waterAllocated
+    for (const barangay of possibleBarangays) {
+      if (remainingCapacity > 0) {
+        assignedBarangays.push(barangay)
+        const distance = assignmentMatrix.find(am =>
+          am.stationId === station.id && am.barangayId === barangay.id
+        )?.distance || 0
+        totalDistance += distance
+        remainingCapacity -= 10000 // assume 10,000L per barangay (simplified)
+      }
+    }
+
+    if (assignedBarangays.length > 0) {
       assignments.push({
         station,
-        assignedBarangay: null,
-        distance: 0,
-        cost: 0,
-        waterDelivered: 0,
+        assignedBarangays,
+        totalWaterDelivered: waterAllocation.waterAllocated,
+        totalDistance: Math.round(totalDistance * 10) / 10
       })
     }
   }
 
   return assignments
+}
+
+// Main function to run all algorithms
+export function runEmergencyWaterSystem(
+  waterTowers: WaterTower[],
+  pumpingStations: PumpingStation[],
+  barangays: Barangay[],
+  assignmentMatrix: AssignmentMatrix[],
+  liveBarangayData: LiveBarangayData[],
+  liveTowerData: LiveTowerData[],
+  liveStationData: LiveStationData[],
+  userInput: UserInput
+): SystemState {
+  // Step 1: A* Shortage Prediction
+  const shortagePredictions = predictShortages(barangays, liveBarangayData)
+
+  // Step 2: Knapsack Water Allocation
+  const waterAllocations = allocateWater(pumpingStations, liveStationData, liveTowerData, userInput)
+
+  // Step 3: Assignment Problem
+  const stationAssignments = assignStationsToBarangays(
+    barangays,
+    pumpingStations,
+    assignmentMatrix,
+    waterAllocations,
+    liveBarangayData
+  )
+
+  // Calculate summary metrics
+  const totalWaterNeeded = waterAllocations.reduce((sum, wa) => sum + wa.waterNeeded, 0)
+  const totalWaterAvailable = liveTowerData.reduce((sum, tower) => sum + tower.currentWater, 0)
+  const totalWaterAllocated = waterAllocations.reduce((sum, wa) => sum + wa.waterAllocated, 0)
+  const barangaysHelped = stationAssignments.reduce((sum, sa) => sum + sa.assignedBarangays.length, 0)
+  const barangaysNotHelped = barangays.length - barangaysHelped
+
+  return {
+    waterTowers,
+    pumpingStations,
+    barangays,
+    assignmentMatrix,
+    liveBarangayData,
+    liveTowerData,
+    liveStationData,
+    userInput,
+    shortagePredictions,
+    waterAllocations,
+    stationAssignments,
+    totalWaterNeeded,
+    totalWaterAvailable,
+    totalWaterAllocated,
+    barangaysHelped,
+    barangaysNotHelped
+  }
 }
