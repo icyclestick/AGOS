@@ -3,16 +3,26 @@
 import Link from 'next/link';
 import { WarpBackground } from '@/components/magicui/warp-background';
 import { ClientOnly } from '@/components/ClientOnly';
-import { CheckCircle, Zap, Brain, Truck, BarChart2 } from 'lucide-react';
+import { CheckCircle, Zap, Brain, Truck, BarChart2, Search, Backpack, Droplet } from 'lucide-react';
 import { AuroraText } from '@/components/magicui/aurora-text';
+import { AnimatedBeam } from '@/components/magicui/animated-beam';
+import { Marquee } from '@/components/magicui/marquee';
+import { useRef, useState, useEffect } from 'react';
 
 export default function LandingPage() {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [showBeam, setShowBeam] = useState(false);
+  useEffect(() => {
+    setShowBeam(true);
+  }, []);
   return (
     <div className="min-h-screen w-full flex flex-col bg-white">
       {/* Header */}
-      <header className="sticky top-0 w-full flex items-center justify-between px-6 md:px-16 py-6 bg-white-900 text-stone-900 z-30 backdrop-blur-lg border border-stone-200">
+      <header className="sticky top-0 w-full flex items-center justify-between px-6 md:px-16 py-6 bg-white/80 text-stone-900 z-30 backdrop-blur-lg border border-stone-200">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-2xl tracking-wide">logo hir</span>
+          <span className="font-bold text-2xl tracking-wide text-blue-900">
+          <AuroraText>agos</AuroraText>
+          </span>
         </div>
         <nav className="flex gap-6 font-medium">
           <Link href="/" className="hover:text-blue-700 transition">Dashboard</Link>
@@ -22,17 +32,18 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative flex flex-col items-start justify-center h-[70vh] bg-white text-left overflow-hidden pb-8 px-6 md:px-16">
+      <section className="relative flex flex-col items-start justify-center h-[70vh] text-left overflow-hidden pb-8 px-6 md:px-16">
+        <div className="absolute inset-0 z-0" style={{ backgroundImage: 'url(/water.jpeg)', backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.2 }} />
         <div className="relative z-10 flex flex-col items-start max-w-2xl mx-auto md:mx-0">
-          <h1 className="text-5xl md:text-7xl font-extrabold mb-2">
-            <span className="text-stone-900">Welcome to </span>
-            <AuroraText>AGOS</AuroraText>
+          <h1 className="text-5xl md:text-7xl font-extrabold mb-2 text-black">
+            <span className="text-black">Welcome to AGOS! </span>
+            
           </h1>
-          <p className="text-base md:text-lg font-light text-blue-700 mb-6">
-            Tagline
+          <p className="text-base md:text-lg font-light text-black mb-6">
+
           </p>
-          <p className="text-base md:text-lg text-gray-600 mb-8 max-w-xl">
-            AGOS is a next-generation platform for real-time water shortage monitoring, AI-powered predictions, and optimized emergency response for Metro Manila.
+          <p className="text-base md:text-lg text-black mb-8 max-w-xl">
+            AGOS is a next-generation platform for real-time water shortage monitoring predictions, and optimized emergency response for Metro Manila.
           </p>
           <Link
             href="/dashboard"
@@ -51,7 +62,7 @@ export default function LandingPage() {
           </WarpBackground>
         </ClientOnly>
         <div className="relative z-10 max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-5xl font-bold mb-10 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-700 bg-clip-text text-transparent outline-4 outline-offset-2 outline-white">
+          <h2 className="text-3xl md:text-5xl font-bold mb-10 text-blue-700">
             What Do We Offer?
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -62,7 +73,7 @@ export default function LandingPage() {
             </div>
             <div className="flex flex-col items-center p-6 bg-white/100 dark:bg-black/30 rounded-xl border border-1 border-blue-100 hover:shadow-lg transition-all duration-300">
               <Brain className="h-10 w-10 text-blue-500 mb-3" />
-              <h3 className="text-xl font-semibold mb-2">AI-powered Prediction</h3>
+              <h3 className="text-xl font-semibold mb-2">Algorithm-powered Prediction</h3>
               <p className="text-gray-600">Advanced algorithms forecast shortages and help you plan ahead.</p>
             </div>
             <div className="flex flex-col items-center p-6 bg-white/100 dark:bg-black/30 rounded-xl border border-1 border-blue-100 hover:shadow-lg transition-all duration-300">
@@ -74,6 +85,32 @@ export default function LandingPage() {
               <BarChart2 className="h-10 w-10 text-blue-500 mb-3" />
               <h3 className="text-xl font-semibold mb-2">Data-driven Insights</h3>
               <p className="text-gray-600">Visual analytics and reports to support your decisions.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Algorithm Overview Section */}
+      <section id="algorithms" className="relative py-24 flex flex-col items-center justify-center bg-white overflow-hidden">
+        <div className="relative z-10 max-w-4xl w-full text-center">
+          <h2 className="text-3xl md:text-5xl font-bold mb-10 text-blue-700">
+            Algorithm Overview
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="flex flex-col items-center p-8 bg-blue-50 rounded-2xl shadow-md border border-blue-100 hover:shadow-lg transition-all duration-300">
+              <Search className="h-12 w-12 text-blue-500 mb-4" />
+              <h3 className="text-xl font-semibold mb-2 text-blue-900">A* Prediction</h3>
+              <p className="text-gray-700">Analyzes current water levels and consumption patterns to predict shortage timelines for each barangay.</p>
+            </div>
+            <div className="flex flex-col items-center p-8 bg-green-50 rounded-2xl shadow-md border border-green-100 hover:shadow-lg transition-all duration-300">
+              <Backpack className="h-12 w-12 text-green-500 mb-4" />
+              <h3 className="text-xl font-semibold mb-2 text-green-900">Knapsack Allocation</h3>
+              <p className="text-gray-700">Optimizes emergency water distribution by prioritizing barangays based on population and urgency.</p>
+            </div>
+            <div className="flex flex-col items-center p-8 bg-purple-50 rounded-2xl shadow-md border border-purple-100 hover:shadow-lg transition-all duration-300">
+              <Droplet className="h-12 w-12 text-purple-500 mb-4" />
+              <h3 className="text-xl font-semibold mb-2 text-purple-900">Assignment Problem</h3>
+              <p className="text-gray-700">Assigns pumping stations to barangays to minimize transportation costs and delivery time.</p>
             </div>
           </div>
         </div>

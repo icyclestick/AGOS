@@ -14,6 +14,12 @@ body {
   .animate-grid {
     animation: grid 15s linear infinite;
   }
+  .animate-marquee {
+    animation: marquee var(--duration,40s) linear infinite;
+  }
+  .animate-marquee-vertical {
+    animation: marquee-vertical var(--duration,40s) linear infinite;
+  }
 }
 
 @layer base {
@@ -90,6 +96,8 @@ body {
     --animate-grid: grid 15s linear infinite;
     --animate-ripple: ripple var(--duration,2s) ease calc(var(--i, 0)*.2s) infinite;
     --animate-aurora: aurora 8s ease-in-out infinite alternate;
+    --animate-marquee: marquee var(--duration) infinite linear;
+    --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
   }
 }
 
@@ -140,6 +148,22 @@ body {
     background-position: 0% 50%;
     transform: rotate(-5deg) scale(0.9);
   }
+  }
+  @keyframes marquee {
+  from {
+    transform: translateX(0);
+    }
+  to {
+    transform: translateX(calc(-100% - var(--gap)));
+    }
+  }
+  @keyframes marquee-vertical {
+  from {
+    transform: translateY(0);
+    }
+  to {
+    transform: translateY(calc(-100% - var(--gap)));
+    }
   }
 }
 

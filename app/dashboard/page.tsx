@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -29,10 +30,8 @@ import { ManilaMap } from "@/components/manila-map"
 import { ShortageTable } from "@/components/shortage-table"
 import { AllocationTable } from "@/components/allocation-table"
 import { AssignmentTable } from "@/components/assignment-table"
-import { SparklesText } from '@/components/magicui/sparkles-text'
-import { useRouter } from 'next/navigation'
 
-export default function Home() {
+export default function WaterDistributionDashboard() {
   const [barangays, setBarangays] = useState<Barangay[]>([])
   const [stations, setStations] = useState<PumpingStation[]>([])
   const [costMatrix, setCostMatrix] = useState<CostMatrix[]>([])
@@ -41,8 +40,6 @@ export default function Home() {
   const [simulating, setSimulating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedBarangay, setSelectedBarangay] = useState<Barangay | null>(null)
-  const [showAnimation, setShowAnimation] = useState(false)
-  const router = useRouter()
 
   // Results
   const [shortageResults, setShortageResults] = useState<ShortageResult[]>([])
@@ -127,11 +124,11 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen bg-white">
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
         <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Allocation Guide for Oprimized Supply (AGOS)</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Manila Water Distribution Dashboard</h1>
           <p className="text-gray-600">Real-time barangay water shortage monitoring and emergency response planning</p>
         </div>
 
@@ -244,7 +241,7 @@ export default function Home() {
                       </p>
                     </div>
                     <div className="p-4 bg-purple-50 rounded-lg">
-                      <h3 className="font-semibold text-purple-900 mb-2">🚰 Hungarian Assignment</h3>
+                      <h3 className="font-semibold text-purple-900 mb-2">🚰 Assignment Problem</h3>
                       <p className="text-sm text-purple-700">
                         Assigns pumping stations to barangays to minimize transportation costs and delivery time.
                       </p>
