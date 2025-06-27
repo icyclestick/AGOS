@@ -15,6 +15,7 @@ import {
   mockLiveBarangayData,
   mockLiveTowerData,
   mockLiveStationData,
+  mockTowerStationMapping,
   mockUserInput,
   type WaterTower,
   type PumpingStation,
@@ -23,6 +24,7 @@ import {
   type LiveBarangayData,
   type LiveTowerData,
   type LiveStationData,
+  type TowerStationMapping,
   type UserInput,
   type SystemState,
 } from "@/lib/supabase";
@@ -40,6 +42,7 @@ export default function WaterDistributionDashboard() {
   const [pumpingStations] = useState<PumpingStation[]>(mockPumpingStations);
   const [barangays] = useState<Barangay[]>(mockBarangays);
   const [assignmentMatrix] = useState<AssignmentMatrix[]>(mockAssignmentMatrix);
+  const [towerStationMapping] = useState<TowerStationMapping[]>(mockTowerStationMapping);
 
   // Live data (simulated)
   const [liveBarangayData] = useState<LiveBarangayData[]>(mockLiveBarangayData);
@@ -80,6 +83,7 @@ export default function WaterDistributionDashboard() {
         liveBarangayData,
         liveTowerData,
         liveStationData,
+        towerStationMapping,
         userInput
       );
 
@@ -284,9 +288,6 @@ export default function WaterDistributionDashboard() {
                               }`}
                             ></div>
                             <span className="font-medium">{station.name}</span>
-                            <span className="text-gray-600">
-                              {stationData?.currentFlowRate || 0} L/s
-                            </span>
                           </div>
                         );
                       })}
@@ -323,7 +324,7 @@ export default function WaterDistributionDashboard() {
                             ></div>
                             <span className="font-medium">{barangay.name}</span>
                             <span className="text-gray-600">
-                              {liveData?.currentFlowRate || 0} L/s
+                              {liveData?.currentFlowRate || 0}
                             </span>
                           </div>
                         );
@@ -394,15 +395,14 @@ export default function WaterDistributionDashboard() {
                             <thead>
                               <tr className="border-b">
                                 <th className="text-left p-2 font-medium">Barangay</th>
-                                <th className="text-left p-2 font-medium">Current Flow Rate (L/s)</th>
-                                <th className="text-left p-2 font-medium">Current Water Supply (L)</th>
-                                <th className="text-left p-2 font-medium">Threshold (L/s)</th>
+                                <th className="text-left p-2 font-medium">Current Flow Rate</th>
+                                <th className="text-left p-2 font-medium">Threshold</th>
                                 <th className="text-left p-2 font-medium">Drop Rate (L/s/hr)</th>
-                                <th className="text-left p-2 font-medium">Emergency Duration (hours)</th>
-                                <th className="text-left p-2 font-medium">Target Flow Rate (L/s)</th>
                                 <th className="text-left p-2 font-medium">Time to Shortage (h)</th>
                                 <th className="text-left p-2 font-medium">Status</th>
                                 <th className="text-left p-2 font-medium">Water Needed (L)</th>
+                                <th className="text-left p-2 font-medium">Current Water Supply (L)</th>
+                                <th className="text-left p-2 font-medium">Target Flow Rate</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -423,11 +423,8 @@ export default function WaterDistributionDashboard() {
                                   <tr key={prediction.barangay.id} className="border-b">
                                     <td className="p-2 font-medium">{prediction.barangay.name}</td>
                                     <td className="p-2">{currentFlowRate}</td>
-                                    <td className="p-2">{Math.round(currentWaterSupply).toLocaleString()}</td>
                                     <td className="p-2">{threshold}</td>
                                     <td className="p-2">{dropRate}</td>
-                                    <td className="p-2">{emergencyDuration}</td>
-                                    <td className="p-2 font-semibold">{targetFlowRate.toFixed(1)}</td>
                                     <td className="p-2">{prediction.timeToShortage.toFixed(1)}</td>
                                     <td className="p-2">
                                       <span
@@ -440,7 +437,7 @@ export default function WaterDistributionDashboard() {
                                         }`}
                                       >
                                         {prediction.status}
-                                      </span>
+                                    </span>
                                     </td>
                                     <td className="p-2">
                                       {prediction.waterNeededToBeSafe ? 
@@ -448,6 +445,8 @@ export default function WaterDistributionDashboard() {
                                         "0"
                                       }
                                     </td>
+                                    <td className="p-2">{Math.round(currentWaterSupply).toLocaleString()}</td>
+                                    <td className="p-2 font-semibold">{targetFlowRate.toFixed(1)}</td>
                                   </tr>
                                 );
                               })}
@@ -473,9 +472,9 @@ export default function WaterDistributionDashboard() {
                               <tr className="border-b">
                                 <th className="text-left p-2 font-medium">Barangay</th>
                                 <th className="text-left p-2 font-medium">Status</th>
-                                <th className="text-left p-2 font-medium">Current Flow Rate (L/s)</th>
-                                <th className="text-left p-2 font-medium">Target Flow Rate (L/s)</th>
-                                <th className="text-left p-2 font-medium">Flow Rate After Emergency (L/s)</th>
+                                <th className="text-left p-2 font-medium">Current Flow Rate</th>
+                                <th className="text-left p-2 font-medium">Target Flow Rate</th>
+                                <th className="text-left p-2 font-medium">Flow Rate After Emergency</th>
                                 <th className="text-left p-2 font-medium">Water Needed (L)</th>
                               </tr>
                             </thead>
@@ -572,7 +571,7 @@ export default function WaterDistributionDashboard() {
                         <CardTitle className="flex items-center gap-2">
                           <span className="text-teal-600">
                             💧 Barangay Water Donation Capacity (Pre-Knapsack)
-                          </span>
+                                  </span>
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
@@ -582,8 +581,8 @@ export default function WaterDistributionDashboard() {
                               <tr className="border-b">
                                 <th className="text-left p-2 font-medium">Barangay</th>
                                 <th className="text-left p-2 font-medium">Status</th>
-                                <th className="text-left p-2 font-medium">Current Flow Rate (L/s)</th>
-                                <th className="text-left p-2 font-medium">Safe Flow Rate (L/s)</th>
+                                <th className="text-left p-2 font-medium">Current Flow Rate</th>
+                                <th className="text-left p-2 font-medium">Target Flow Rate</th>
                                 <th className="text-left p-2 font-medium">Max Safe Donation (L)</th>
                               </tr>
                             </thead>
@@ -631,7 +630,7 @@ export default function WaterDistributionDashboard() {
                                         }`}
                                       >
                                         {supplier.status}
-                                      </span>
+                                    </span>
                                     </td>
                                     <td className="p-2">{supplier.currentFlowRate}</td>
                                     <td className="p-2 font-semibold">{supplier.safeFlowRate.toFixed(1)}</td>
@@ -763,6 +762,49 @@ export default function WaterDistributionDashboard() {
                       </CardContent>
                     </Card>
 
+                    {/* Tower-Station Assignments */}
+                    <Card className="mt-6">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <span className="text-indigo-600">
+                            🏗️ Tower-Station Assignments
+                          </span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b">
+                                <th className="text-left p-2 font-medium">Water Tower</th>
+                                <th className="text-left p-2 font-medium">Assigned Station</th>
+                                <th className="text-left p-2 font-medium">Current Water (L)</th>
+                                <th className="text-left p-2 font-medium">Max Capacity (L)</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {towerStationMapping.map((mapping) => {
+                                const tower = waterTowers.find(t => t.id === mapping.towerId);
+                                const station = pumpingStations.find(s => s.id === mapping.stationId);
+                                const liveTower = liveTowerData.find(t => t.towerId === mapping.towerId);
+                                
+                                return (
+                                  <tr key={mapping.towerId} className="border-b">
+                                    <td className="p-2 font-medium">{tower?.name || mapping.towerId}</td>
+                                    <td className="p-2 font-medium">{station?.name || mapping.stationId}</td>
+                                    <td className="p-2 font-semibold text-blue-600">
+                                      {(liveTower?.currentWater || 0).toLocaleString()}
+                                    </td>
+                                    <td className="p-2">{(tower?.maxCapacity || 0).toLocaleString()}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </CardContent>
+                    </Card>
+
                     {/* Updated Barangay Status After Water Allocation */}
                     <Card className="mt-6">
                       <CardHeader>
@@ -778,14 +820,14 @@ export default function WaterDistributionDashboard() {
                             <thead>
                               <tr className="border-b">
                                 <th className="text-left p-2 font-medium">Barangay</th>
-                                <th className="text-left p-2 font-medium">Original Flow Rate (L/s)</th>
+                                <th className="text-left p-2 font-medium">Original Flow Rate</th>
                                 <th className="text-left p-2 font-medium">Original Water Supply (L)</th>
                                 <th className="text-left p-2 font-medium">Water Received (L)</th>
                                 <th className="text-left p-2 font-medium">Water Given (L)</th>
-                                <th className="text-left p-2 font-medium">Updated Flow Rate (L/s)</th>
-                                <th className="text-left p-2 font-medium">Target Flow Rate (L/s)</th>
+                                <th className="text-left p-2 font-medium">Updated Flow Rate</th>
+                                <th className="text-left p-2 font-medium">Target Flow Rate</th>
                                 <th className="text-left p-2 font-medium">Updated Water Supply (L)</th>
-                                <th className="text-left p-2 font-medium">Threshold (L/s)</th>
+                                <th className="text-left p-2 font-medium">Threshold</th>
                                 <th className="text-left p-2 font-medium">Drop Rate (L/s/hr)</th>
                                 <th className="text-left p-2 font-medium">Time to Shortage (h)</th>
                                 <th className="text-left p-2 font-medium">Original Status</th>
@@ -880,7 +922,7 @@ export default function WaterDistributionDashboard() {
                                         }`}
                                       >
                                         {prediction.status}
-                                      </span>
+                                </span>
                                     </td>
                                     <td className="p-2">
                                       <span
@@ -893,14 +935,14 @@ export default function WaterDistributionDashboard() {
                                         }`}
                                       >
                                         {updatedStatus}
-                                      </span>
+                                </span>
                                     </td>
                                   </tr>
                                 );
                               })}
                             </tbody>
                           </table>
-                        </div>
+                              </div>
                       </CardContent>
                     </Card>
                   </TabsContent>
@@ -923,13 +965,10 @@ export default function WaterDistributionDashboard() {
                                 <th className="text-left p-2 font-medium">Assigned Barangays</th>
                                 <th className="text-left p-2 font-medium">Total Water Delivered (L)</th>
                                 <th className="text-left p-2 font-medium">Total Distance (km)</th>
-                                <th className="text-left p-2 font-medium">Efficiency</th>
                               </tr>
                             </thead>
                             <tbody>
                               {systemState.stationAssignments.map((assignment) => {
-                                const efficiency = assignment.totalWaterDelivered > 0 ? 
-                                  (assignment.assignedBarangays.length / assignment.totalDistance).toFixed(2) : "0";
                                 return (
                                   <tr key={assignment.station.id} className="border-b">
                                     <td className="p-2 font-medium">{assignment.station.name}</td>
@@ -953,7 +992,6 @@ export default function WaterDistributionDashboard() {
                                       {assignment.totalWaterDelivered.toLocaleString()}
                                     </td>
                                     <td className="p-2">{assignment.totalDistance}</td>
-                                    <td className="p-2">{efficiency}</td>
                                   </tr>
                                 );
                               })}
@@ -971,7 +1009,6 @@ export default function WaterDistributionDashboard() {
                                     .reduce((sum, sa) => sum + sa.totalDistance, 0)
                                     .toFixed(1)}km
                                 </td>
-                                <td></td>
                               </tr>
                             </tfoot>
                           </table>

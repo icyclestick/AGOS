@@ -190,6 +190,13 @@ export const mockAssignmentMatrix: AssignmentMatrix[] = [
   { stationId: "PS3", barangayId: "B5", distance: 5.4, cost: 30 }
 ]
 
+// Tower-Station mapping with capacity limits
+export const mockTowerStationMapping: TowerStationMapping[] = [
+  { towerId: "WT1", stationId: "PS1", waterAllocated: 0, efficiency: 0.95 },
+  { towerId: "WT2", stationId: "PS2", waterAllocated: 0, efficiency: 0.92 },
+  { towerId: "WT3", stationId: "PS3", waterAllocated: 0, efficiency: 0.94 }
+]
+
 export const mockUserInput: UserInput = {
-  emergencyDuration: 2 // hours
+  emergencyDuration: 3 // hours
 }
