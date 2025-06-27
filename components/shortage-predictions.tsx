@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import type { ShortageResult } from "@/lib/algorithms"
+import type { ShortagePrediction } from "@/lib/supabase"
 
 interface ShortagePredictionsProps {
-  results: ShortageResult[]
+  results: ShortagePrediction[]
 }
 
 export function ShortagePredictions({ results }: ShortagePredictionsProps) {
@@ -38,8 +38,8 @@ export function ShortagePredictions({ results }: ShortagePredictionsProps) {
               {results.map((result) => (
                 <tr key={result.barangay.id} className="border-b">
                   <td className="p-2 font-medium">{result.barangay.name}</td>
-                  <td className="p-2">{result.barangay.current_level.toLocaleString()}</td>
-                  <td className="p-2">{result.daysToShortage}</td>
+                  <td className="p-2">-</td>
+                  <td className="p-2">{(result.timeToShortage / 24).toFixed(1)}</td>
                   <td className="p-2">
                     <Badge variant={getStatusColor(result.status)}>{result.status}</Badge>
                   </td>

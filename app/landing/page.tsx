@@ -12,11 +12,22 @@ import {
   Search,
   Backpack,
   Droplet,
+  MapPin,
+  Users,
+  AlertTriangle,
 } from "lucide-react";
 import { AuroraText } from "@/components/magicui/aurora-text";
 import { AnimatedBeam } from "@/components/magicui/animated-beam";
 import { Marquee } from "@/components/magicui/marquee";
 import { useRef, useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  mockBarangays,
+  mockLiveBarangayData,
+  type Barangay,
+  type LiveBarangayData,
+} from "@/lib/supabase";
 
 export default function LandingPage() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -24,18 +35,24 @@ export default function LandingPage() {
   useEffect(() => {
     setShowBeam(true);
   }, []);
+
   return (
     <div className="min-h-screen w-full flex flex-col bg-white">
       {/* Header */}
       <header className="sticky top-0 w-full flex items-center justify-between px-6 md:px-16 py-6 bg-white/80 text-stone-900 z-30 backdrop-blur-lg border border-stone-200">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-2xl tracking-wide text-blue-900">
-            <AuroraText>agos</AuroraText>
-          </span>
+          <Link href="/" className="hover:opacity-80 transition">
+            <span className="font-bold text-2xl tracking-wide text-blue-900">
+              <AuroraText>agos</AuroraText>
+            </span>
+          </Link>
         </div>
         <nav className="flex gap-6 font-medium">
           <Link href="/dashboard" className="hover:text-blue-700 transition">
             Dashboard
+          </Link>
+          <Link href="/simulation" className="hover:text-blue-700 transition">
+            Simulation
           </Link>
           <a href="#features" className="hover:text-blue-700 transition">
             Features
