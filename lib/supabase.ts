@@ -20,15 +20,13 @@ export interface PumpingStation {
   id: string
   name: string
   location: { lat: number, lng: number }
-  thresholdFlowRate: number // minimum required L/s
-  priority: number
-  populationServed: number
 }
 
 export interface Barangay {
   id: string
   name: string
   location: { lat: number, lng: number }
+  population: number
 }
 
 // Distance/cost matrix for assignment problem
@@ -44,7 +42,6 @@ export interface TowerStationMapping {
   towerId: string
   stationId: string
   waterAllocated: number
-  efficiency: number
 }
 
 // 2. Live Data (from sensors/SCADA)
@@ -57,11 +54,6 @@ export interface LiveBarangayData {
 export interface LiveTowerData {
   towerId: string
   currentWater: number // liters available
-}
-
-export interface LiveStationData {
-  stationId: string
-  currentFlowRate: number // L/s output
 }
 
 // 3. User-Defined Data
@@ -108,7 +100,6 @@ export interface SystemState {
   // Live data
   liveBarangayData: LiveBarangayData[]
   liveTowerData: LiveTowerData[]
-  liveStationData: LiveStationData[]
 
   // User input
   userInput: UserInput
@@ -128,73 +119,78 @@ export interface SystemState {
 
 // Mock Data
 export const mockWaterTowers: WaterTower[] = [
-  { id: "WT1", name: "Tower 1", location: { lat: 14.6042, lng: 120.9542 }, maxCapacity: 150000 },
-  { id: "WT2", name: "Tower 2", location: { lat: 14.6142, lng: 120.9642 }, maxCapacity: 150000 },
-  { id: "WT3", name: "Tower 3", location: { lat: 14.6242, lng: 120.9742 }, maxCapacity: 150000 }
+  { id: "WT1", name: "Tower 1", location: { lat: 14.677474357621392, lng:121.11088250297762 }, maxCapacity: 150000 },
+  { id: "WT2", name: "Tower 2", location: { lat: 14.670016680523684, lng:121.13842923212368 }, maxCapacity: 150000 },
+  { id: "WT3", name: "Tower 3", location: { lat: 14.610844226749338, lng:121.10164316999824 }, maxCapacity: 150000 },
+  { id: "WT4", name: "Tower 4", location: { lat: 14.62090615865121, lng:121.12168156337614 }, maxCapacity: 150000 }
 ]
 
 export const mockPumpingStations: PumpingStation[] = [
-  { id: "PS1", name: "Station 1", location: { lat: 14.6042, lng: 120.9542 }, thresholdFlowRate: 40, priority: 10, populationServed: 50000 },
-  { id: "PS2", name: "Station 2", location: { lat: 14.6142, lng: 120.9642 }, thresholdFlowRate: 35, priority: 8, populationServed: 30000 },
-  { id: "PS3", name: "Station 3", location: { lat: 14.6242, lng: 120.9742 }, thresholdFlowRate: 30, priority: 9, populationServed: 40000 }
+  { id: "PS1", name: "San Mateo Pumping Station", location: { lat: 14.67874077019177, lng:121.11099547398246  } },
+  { id: "PS2", name: "Modesta Pumping Station", location: { lat: 14.670168854201755, lng:121.13776040732638  } },
+  { id: "PS3", name: "Pasig Pumping Station", location: { lat: 14.613133450509213, lng:121.10222707256456  } },
+  { id: "PS4", name: "Antipolo Pumping Station", location: { lat: 14.622368122709814, lng:121.12126321341665 } }
 ]
 
 export const mockBarangays: Barangay[] = [
-  { id: "B1", name: "Barangay 1", location: { lat: 14.6042, lng: 120.9542 } },
-  { id: "B2", name: "Barangay 2", location: { lat: 14.6142, lng: 120.9642 } },
-  { id: "B3", name: "Barangay 3", location: { lat: 14.6242, lng: 120.9742 } },
-  { id: "B4", name: "Barangay 4", location: { lat: 14.6342, lng: 120.9842 } },
-  { id: "B5", name: "Barangay 5", location: { lat: 14.6442, lng: 120.9942 } }
+  { id: "B1", name: "Tumana", location: { lat: 14.657748264302496, lng: 121.09649091706488 }, population: 46874  },
+  { id: "B2", name: "Barangka ", location: { lat: 14.638061338661439, lng: 121.08398005528672 }, population: 20060 },
+  { id: "B3", name: "Nangka", location: { lat: 14.66811497998012, lng: 121.10890597504279 }, population: 47513  },
+  { id: "B4", name: "Fortune", location: { lat: 14.659043981881757, lng: 121.12753713847853 }, population: 39181  },
+  { id: "B5", name: "Concepcion Uno", location: { lat: 14.647016803025403, lng: 121.10492654778768 }, population: 46143 }
 ]
 
 export const mockLiveBarangayData: LiveBarangayData[] = [
-  { barangayId: "B1", currentFlowRate: 25, dropRate: 2 },
-  { barangayId: "B2", currentFlowRate: 20, dropRate: 1.5 },
-  { barangayId: "B3", currentFlowRate: 35, dropRate: 1.8 },
-  { barangayId: "B4", currentFlowRate: 15, dropRate: 2.5 },
-  { barangayId: "B5", currentFlowRate: 28, dropRate: 1.2 }
+  { barangayId: "B1", currentFlowRate: 75.41, dropRate: 2 },
+  { barangayId: "B2", currentFlowRate: 32.27 , dropRate: 2.7 },
+  { barangayId: "B3", currentFlowRate: 76.44 , dropRate: 1.6 },
+  { barangayId: "B4", currentFlowRate: 63.03 , dropRate: 2.5 },
+  { barangayId: "B5", currentFlowRate: 74.23 , dropRate: 1.2 }
 ]
 
 export const mockLiveTowerData: LiveTowerData[] = [
   { towerId: "WT1", currentWater: 80000 },
   { towerId: "WT2", currentWater: 120000 },
-  { towerId: "WT3", currentWater: 90000 }
-]
-
-export const mockLiveStationData: LiveStationData[] = [
-  { stationId: "PS1", currentFlowRate: 30 },
-  { stationId: "PS2", currentFlowRate: 25 },
-  { stationId: "PS3", currentFlowRate: 28 }
+  { towerId: "WT3", currentWater: 90000 },
+  { towerId: "WT4", currentWater: 110000 }
 ]
 
 export const mockAssignmentMatrix: AssignmentMatrix[] = [
-  // Station 1 connections
+  // Station 1 connections (San Mateo)
   { stationId: "PS1", barangayId: "B1", distance: 2.1, cost: 20 },
   { stationId: "PS1", barangayId: "B2", distance: 3.2, cost: 25 },
-  { stationId: "PS1", barangayId: "B3", distance: 4.5, cost: 30 },
-  { stationId: "PS1", barangayId: "B4", distance: 5.8, cost: 35 },
-  { stationId: "PS1", barangayId: "B5", distance: 7.2, cost: 40 },
+  { stationId: "PS1", barangayId: "B3", distance: 1.5, cost: 15 },
+  { stationId: "PS1", barangayId: "B4", distance: 2.8, cost: 22 },
+  { stationId: "PS1", barangayId: "B5", distance: 4.2, cost: 30 },
 
-  // Station 2 connections
-  { stationId: "PS2", barangayId: "B1", distance: 5.2, cost: 35 },
-  { stationId: "PS2", barangayId: "B2", distance: 2.8, cost: 22 },
-  { stationId: "PS2", barangayId: "B3", distance: 3.1, cost: 28 },
-  { stationId: "PS2", barangayId: "B4", distance: 4.3, cost: 32 },
-  { stationId: "PS2", barangayId: "B5", distance: 6.1, cost: 38 },
+  // Station 2 connections (Modesta)
+  { stationId: "PS2", barangayId: "B1", distance: 3.2, cost: 25 },
+  { stationId: "PS2", barangayId: "B2", distance: 4.8, cost: 32 },
+  { stationId: "PS2", barangayId: "B3", distance: 2.8, cost: 22 },
+  { stationId: "PS2", barangayId: "B4", distance: 1.1, cost: 12 },
+  { stationId: "PS2", barangayId: "B5", distance: 3.5, cost: 28 },
 
-  // Station 3 connections
-  { stationId: "PS3", barangayId: "B1", distance: 6.1, cost: 40 },
-  { stationId: "PS3", barangayId: "B2", distance: 4.8, cost: 32 },
-  { stationId: "PS3", barangayId: "B3", distance: 2.5, cost: 18 },
-  { stationId: "PS3", barangayId: "B4", distance: 3.7, cost: 25 },
-  { stationId: "PS3", barangayId: "B5", distance: 5.4, cost: 30 }
+  // Station 3 connections (Pasig)
+  { stationId: "PS3", barangayId: "B1", distance: 4.1, cost: 30 },
+  { stationId: "PS3", barangayId: "B2", distance: 2.5, cost: 18 },
+  { stationId: "PS3", barangayId: "B3", distance: 5.2, cost: 35 },
+  { stationId: "PS3", barangayId: "B4", distance: 6.1, cost: 40 },
+  { stationId: "PS3", barangayId: "B5", distance: 1.8, cost: 15 },
+
+  // Station 4 connections (Antipolo)
+  { stationId: "PS4", barangayId: "B1", distance: 3.8, cost: 28 },
+  { stationId: "PS4", barangayId: "B2", distance: 4.2, cost: 30 },
+  { stationId: "PS4", barangayId: "B3", distance: 2.9, cost: 22 },
+  { stationId: "PS4", barangayId: "B4", distance: 2.3, cost: 18 },
+  { stationId: "PS4", barangayId: "B5", distance: 2.7, cost: 20 }
 ]
 
 // Tower-Station mapping with capacity limits
 export const mockTowerStationMapping: TowerStationMapping[] = [
-  { towerId: "WT1", stationId: "PS1", waterAllocated: 0, efficiency: 0.95 },
-  { towerId: "WT2", stationId: "PS2", waterAllocated: 0, efficiency: 0.92 },
-  { towerId: "WT3", stationId: "PS3", waterAllocated: 0, efficiency: 0.94 }
+  { towerId: "WT1", stationId: "PS1", waterAllocated: 0},
+  { towerId: "WT2", stationId: "PS2", waterAllocated: 0},
+  { towerId: "WT3", stationId: "PS3", waterAllocated: 0},
+  { towerId: "WT4", stationId: "PS4", waterAllocated: 0}
 ]
 
 export const mockUserInput: UserInput = {

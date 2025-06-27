@@ -5,7 +5,6 @@ import type {
   AssignmentMatrix,
   LiveBarangayData,
   LiveTowerData,
-  LiveStationData,
   UserInput,
   ShortagePrediction,
   WaterAllocation,
@@ -262,12 +261,22 @@ export function allocateWater(
             
             const used = waterUsage.towers.get(tower.towerId) || 0;
             const available = Math.max(0, (tower.currentWater || 0) - used);
+            
+            // Additional safety check: ensure we never exceed tower capacity
+            if (available <= 0) continue;
+            
             const waterFromTower = Math.min(remainingNeed, available);
             
             if (waterFromTower > 0) {
               waterSources.push(`Water Station (${waterFromTower.toLocaleString()}L)`);
               remainingNeed -= waterFromTower;
               waterUsage.towers.set(tower.towerId, used + waterFromTower);
+              
+              // Log if we're using a significant portion of the tower's capacity
+              const usagePercentage = ((used + waterFromTower) / tower.currentWater) * 100;
+              if (usagePercentage > 80) {
+                console.warn(`Tower ${tower.towerId} is ${usagePercentage.toFixed(1)}% utilized`);
+              }
             }
           }
         }
@@ -312,12 +321,22 @@ export function allocateWater(
             
             const used = waterUsage.towers.get(tower.towerId) || 0;
             const available = Math.max(0, (tower.currentWater || 0) - used);
+            
+            // Additional safety check: ensure we never exceed tower capacity
+            if (available <= 0) continue;
+            
             const waterFromTower = Math.min(remainingNeed, available);
             
             if (waterFromTower > 0) {
               waterSources.push(`Water Station (${waterFromTower.toLocaleString()}L)`);
               remainingNeed -= waterFromTower;
               waterUsage.towers.set(tower.towerId, used + waterFromTower);
+              
+              // Log if we're using a significant portion of the tower's capacity
+              const usagePercentage = ((used + waterFromTower) / tower.currentWater) * 100;
+              if (usagePercentage > 80) {
+                console.warn(`Tower ${tower.towerId} is ${usagePercentage.toFixed(1)}% utilized`);
+              }
             }
           }
         }
@@ -354,7 +373,9 @@ export function assignStationsToBarangays(
   assignmentMatrix: AssignmentMatrix[],
   waterAllocations: WaterAllocation[],
   liveBarangayData: LiveBarangayData[],
-  shortagePredictions: ShortagePrediction[]
+  shortagePredictions: ShortagePrediction[],
+  liveTowerData: LiveTowerData[],
+  towerStationMapping: TowerStationMapping[]
 ): StationAssignment[] {
   // Validate inputs
   if (!barangays || barangays.length === 0) {
@@ -380,6 +401,12 @@ export function assignStationsToBarangays(
   // Get barangays that received water allocation
   const allocatedBarangays = waterAllocations.filter(wa => wa.allocated);
 
+  // Track tower water usage to ensure we don't exceed tower capacities
+  const towerWaterUsage = new Map<string, number>();
+  liveTowerData.forEach(tower => {
+    towerWaterUsage.set(tower.towerId, 0);
+  });
+
   // Create water distribution network assignments
   const assignments: StationAssignment[] = [];
 
@@ -397,8 +424,8 @@ export function assignStationsToBarangays(
       if (receivedFromTowers) {
         // Find all pumping stations that can serve this barangay
         const possibleStations = pumpingStations.filter(station => {
-      const assignment = assignmentMatrix.find(am =>
-        am.stationId === station.id && am.barangayId === barangay.id
+          const assignment = assignmentMatrix.find(am =>
+            am.stationId === station.id && am.barangayId === barangay.id
           );
           return assignment !== undefined;
         });
@@ -415,13 +442,26 @@ export function assignStationsToBarangays(
             return stationDistance < nearestDistance ? station : nearest;
           });
 
-        const distance = assignmentMatrix.find(am =>
+          const distance = assignmentMatrix.find(am =>
             am.stationId === bestStation.id && am.barangayId === barangay.id
           )?.distance || 0;
 
+          // Find the tower that supplies this station
+          const towerMapping = towerStationMapping.find(mapping => mapping.stationId === bestStation.id);
+          if (!towerMapping) {
+            console.warn(`No tower mapping found for station ${bestStation.name}`);
+            continue;
+          }
+
+          const tower = liveTowerData.find(t => t.towerId === towerMapping.towerId);
+          if (!tower) {
+            console.warn(`No tower data found for tower ${towerMapping.towerId}`);
+            continue;
+          }
+
           // Calculate how much water this station needs to deliver
           // Only count water that came from towers, not from other barangays
-          const towerWaterAmount = waterAllocation.waterSources?.reduce((total, source) => {
+          const totalTowerWaterNeeded = waterAllocation.waterSources?.reduce((total, source) => {
             if (source.includes("Water Station")) {
               const match = source.match(/\(([^)]+)\)/);
               if (match) {
@@ -432,22 +472,39 @@ export function assignStationsToBarangays(
             return total;
           }, 0) || 0;
 
-          // Create or update assignment for this station
-          let existingAssignment = assignments.find(a => a.station.id === bestStation.id);
-          
-          if (existingAssignment) {
-            // Add barangay to existing assignment
-            existingAssignment.assignedBarangays.push(barangay);
-            existingAssignment.totalWaterDelivered += towerWaterAmount;
-            existingAssignment.totalDistance += distance;
+          // Check if the tower has enough capacity to deliver this water
+          const currentTowerUsage = towerWaterUsage.get(tower.towerId) || 0;
+          const availableTowerWater = Math.max(0, tower.currentWater - currentTowerUsage);
+          const actualWaterDelivered = Math.min(totalTowerWaterNeeded, availableTowerWater);
+
+          if (actualWaterDelivered > 0) {
+            // Update tower usage
+            towerWaterUsage.set(tower.towerId, currentTowerUsage + actualWaterDelivered);
+
+            // Create or update assignment for this station
+            let existingAssignment = assignments.find(a => a.station.id === bestStation.id);
+            
+            if (existingAssignment) {
+              // Add barangay to existing assignment
+              existingAssignment.assignedBarangays.push(barangay);
+              existingAssignment.totalWaterDelivered += actualWaterDelivered;
+              existingAssignment.totalDistance += distance;
+            } else {
+              // Create new assignment
+              assignments.push({
+                station: bestStation,
+                assignedBarangays: [barangay],
+                totalWaterDelivered: actualWaterDelivered,
+                totalDistance: distance
+              });
+            }
+
+            // Log if we couldn't deliver the full amount
+            if (actualWaterDelivered < totalTowerWaterNeeded) {
+              console.warn(`Station ${bestStation.name} (Tower ${tower.towerId}) could only deliver ${actualWaterDelivered.toLocaleString()}L out of ${totalTowerWaterNeeded.toLocaleString()}L needed due to tower capacity limit`);
+            }
           } else {
-            // Create new assignment
-      assignments.push({
-              station: bestStation,
-              assignedBarangays: [barangay],
-              totalWaterDelivered: towerWaterAmount,
-              totalDistance: distance
-            });
+            console.warn(`Station ${bestStation.name} (Tower ${tower.towerId}) has no available water capacity`);
           }
         } else {
           console.warn(`No pumping stations can serve barangay ${barangay.name}`);
@@ -469,7 +526,6 @@ export function runEmergencyWaterSystem(
   assignmentMatrix: AssignmentMatrix[],
   liveBarangayData: LiveBarangayData[],
   liveTowerData: LiveTowerData[],
-  liveStationData: LiveStationData[],
   towerStationMapping: TowerStationMapping[],
   userInput: UserInput
 ): SystemState {
@@ -508,7 +564,9 @@ export function runEmergencyWaterSystem(
     assignmentMatrix,
     waterAllocations,
       liveBarangayData,
-      shortagePredictions
+      shortagePredictions,
+      liveTowerData,
+      towerStationMapping
   )
 
   // Calculate summary metrics
@@ -531,7 +589,6 @@ export function runEmergencyWaterSystem(
       assignmentMatrix: assignmentMatrix || [],
       liveBarangayData: liveBarangayData || [],
       liveTowerData: liveTowerData || [],
-      liveStationData: liveStationData || [],
     userInput,
       shortagePredictions: shortagePredictions || [],
       waterAllocations: waterAllocations || [],

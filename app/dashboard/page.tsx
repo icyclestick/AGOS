@@ -14,7 +14,6 @@ import {
   mockAssignmentMatrix,
   mockLiveBarangayData,
   mockLiveTowerData,
-  mockLiveStationData,
   mockTowerStationMapping,
   mockUserInput,
   type WaterTower,
@@ -23,7 +22,6 @@ import {
   type AssignmentMatrix,
   type LiveBarangayData,
   type LiveTowerData,
-  type LiveStationData,
   type TowerStationMapping,
   type UserInput,
   type SystemState,
@@ -47,7 +45,6 @@ export default function WaterDistributionDashboard() {
   // Live data (simulated)
   const [liveBarangayData] = useState<LiveBarangayData[]>(mockLiveBarangayData);
   const [liveTowerData] = useState<LiveTowerData[]>(mockLiveTowerData);
-  const [liveStationData] = useState<LiveStationData[]>(mockLiveStationData);
 
   // User input
   const [userInput, setUserInput] = useState<UserInput>(mockUserInput);
@@ -82,7 +79,6 @@ export default function WaterDistributionDashboard() {
         assignmentMatrix,
         liveBarangayData,
         liveTowerData,
-        liveStationData,
         towerStationMapping,
         userInput
       );
@@ -102,8 +98,8 @@ export default function WaterDistributionDashboard() {
   const warningCount =
     systemState?.shortagePredictions.filter((r) => r.status === "Warning")
       .length || 0;
-  const totalPopulation = pumpingStations.reduce(
-    (sum, s) => sum + s.populationServed,
+  const totalPopulation = barangays.reduce(
+    (sum, b) => sum + b.population,
     0
   );
   const totalWaterAvailable = liveTowerData.reduce(
@@ -267,9 +263,6 @@ export default function WaterDistributionDashboard() {
                     </h4>
                     <div className="space-y-1">
                       {pumpingStations.map((station, index) => {
-                        const stationData = liveStationData.find(
-                          (s) => s.stationId === station.id
-                        );
                         // Check if this station has any assigned barangays in the assignment results
                         const stationAssignment = systemState?.stationAssignments.find(
                           (sa) => sa.station.id === station.id
