@@ -128,23 +128,24 @@ export interface SystemState {
 
 // Mock Data
 export const mockWaterTowers: WaterTower[] = [
-  { id: "WT1", name: "Tower 1", location: { lat: 14.6042, lng: 120.9542 }, maxCapacity: 150000 },
-  { id: "WT2", name: "Tower 2", location: { lat: 14.6142, lng: 120.9642 }, maxCapacity: 150000 },
-  { id: "WT3", name: "Tower 3", location: { lat: 14.6242, lng: 120.9742 }, maxCapacity: 150000 }
+  { id: "WT1", name: "Marikina Water Tower", location: { lat: 14.6500, lng: 121.1000 }, maxCapacity: 150000 },
+  { id: "WT2", name: "Antipolo Water Tower", location: { lat: 14.6200, lng: 121.1200 }, maxCapacity: 150000 },
+  { id: "WT3", name: "Pasig Water Tower", location: { lat: 14.6100, lng: 121.1000 }, maxCapacity: 150000 }
 ]
 
 export const mockPumpingStations: PumpingStation[] = [
-  { id: "PS1", name: "Station 1", location: { lat: 14.6042, lng: 120.9542 }, thresholdFlowRate: 40, priority: 10, populationServed: 50000 },
-  { id: "PS2", name: "Station 2", location: { lat: 14.6142, lng: 120.9642 }, thresholdFlowRate: 35, priority: 8, populationServed: 30000 },
-  { id: "PS3", name: "Station 3", location: { lat: 14.6242, lng: 120.9742 }, thresholdFlowRate: 30, priority: 9, populationServed: 40000 }
+  { id: "PS1", name: "San Mateo Pumping Station", location: { lat: 14.67874077019177, lng: 121.11099547398246 }, thresholdFlowRate: 40, priority: 10, populationServed: 50000 },
+  { id: "PS2", name: "Modesta Pumping Station", location: { lat: 14.670168854201755, lng: 121.13776040732638 }, thresholdFlowRate: 35, priority: 8, populationServed: 30000 },
+  { id: "PS3", name: "Pasig Pumping Station", location: { lat: 14.613133450509213, lng: 121.10222707256456 }, thresholdFlowRate: 30, priority: 9, populationServed: 40000 },
+  { id: "PS4", name: "Antipolo Pumping Station", location: { lat: 14.622368122709814, lng: 121.12126321341665 }, thresholdFlowRate: 45, priority: 7, populationServed: 35000 }
 ]
 
 export const mockBarangays: Barangay[] = [
-  { id: "B1", name: "Barangay 1", location: { lat: 14.6042, lng: 120.9542 } },
-  { id: "B2", name: "Barangay 2", location: { lat: 14.6142, lng: 120.9642 } },
-  { id: "B3", name: "Barangay 3", location: { lat: 14.6242, lng: 120.9742 } },
-  { id: "B4", name: "Barangay 4", location: { lat: 14.6342, lng: 120.9842 } },
-  { id: "B5", name: "Barangay 5", location: { lat: 14.6442, lng: 120.9942 } }
+  { id: "B1", name: "Tumana", location: { lat: 14.657748264302496, lng: 121.09649091706488 } },
+  { id: "B2", name: "Barangka", location: { lat: 14.638061338661439, lng: 121.08398005528672 } },
+  { id: "B3", name: "Nangka", location: { lat: 14.66811497998012, lng: 121.10890597504279 } },
+  { id: "B4", name: "Fortune", location: { lat: 14.659043981881757, lng: 121.12753713847853 } },
+  { id: "B5", name: "Concepcion Uno", location: { lat: 14.647016803025403, lng: 121.10492654778768 } }
 ]
 
 export const mockLiveBarangayData: LiveBarangayData[] = [
@@ -168,33 +169,41 @@ export const mockLiveStationData: LiveStationData[] = [
 ]
 
 export const mockAssignmentMatrix: AssignmentMatrix[] = [
-  // Station 1 connections
+  // Station 1 connections (San Mateo)
   { stationId: "PS1", barangayId: "B1", distance: 2.1, cost: 20 },
   { stationId: "PS1", barangayId: "B2", distance: 3.2, cost: 25 },
-  { stationId: "PS1", barangayId: "B3", distance: 4.5, cost: 30 },
-  { stationId: "PS1", barangayId: "B4", distance: 5.8, cost: 35 },
-  { stationId: "PS1", barangayId: "B5", distance: 7.2, cost: 40 },
+  { stationId: "PS1", barangayId: "B3", distance: 1.5, cost: 15 },
+  { stationId: "PS1", barangayId: "B4", distance: 2.8, cost: 22 },
+  { stationId: "PS1", barangayId: "B5", distance: 4.2, cost: 30 },
 
-  // Station 2 connections
-  { stationId: "PS2", barangayId: "B1", distance: 5.2, cost: 35 },
-  { stationId: "PS2", barangayId: "B2", distance: 2.8, cost: 22 },
-  { stationId: "PS2", barangayId: "B3", distance: 3.1, cost: 28 },
-  { stationId: "PS2", barangayId: "B4", distance: 4.3, cost: 32 },
-  { stationId: "PS2", barangayId: "B5", distance: 6.1, cost: 38 },
+  // Station 2 connections (Modesta)
+  { stationId: "PS2", barangayId: "B1", distance: 3.2, cost: 25 },
+  { stationId: "PS2", barangayId: "B2", distance: 4.8, cost: 32 },
+  { stationId: "PS2", barangayId: "B3", distance: 2.8, cost: 22 },
+  { stationId: "PS2", barangayId: "B4", distance: 1.1, cost: 12 },
+  { stationId: "PS2", barangayId: "B5", distance: 3.5, cost: 28 },
 
-  // Station 3 connections
-  { stationId: "PS3", barangayId: "B1", distance: 6.1, cost: 40 },
-  { stationId: "PS3", barangayId: "B2", distance: 4.8, cost: 32 },
-  { stationId: "PS3", barangayId: "B3", distance: 2.5, cost: 18 },
-  { stationId: "PS3", barangayId: "B4", distance: 3.7, cost: 25 },
-  { stationId: "PS3", barangayId: "B5", distance: 5.4, cost: 30 }
+  // Station 3 connections (Pasig)
+  { stationId: "PS3", barangayId: "B1", distance: 4.1, cost: 30 },
+  { stationId: "PS3", barangayId: "B2", distance: 2.5, cost: 18 },
+  { stationId: "PS3", barangayId: "B3", distance: 5.2, cost: 35 },
+  { stationId: "PS3", barangayId: "B4", distance: 6.1, cost: 40 },
+  { stationId: "PS3", barangayId: "B5", distance: 1.8, cost: 15 },
+
+  // Station 4 connections (Antipolo)
+  { stationId: "PS4", barangayId: "B1", distance: 3.8, cost: 28 },
+  { stationId: "PS4", barangayId: "B2", distance: 4.2, cost: 30 },
+  { stationId: "PS4", barangayId: "B3", distance: 2.9, cost: 22 },
+  { stationId: "PS4", barangayId: "B4", distance: 2.3, cost: 18 },
+  { stationId: "PS4", barangayId: "B5", distance: 2.7, cost: 20 }
 ]
 
 // Tower-Station mapping with capacity limits
 export const mockTowerStationMapping: TowerStationMapping[] = [
   { towerId: "WT1", stationId: "PS1", waterAllocated: 0, efficiency: 0.95 },
   { towerId: "WT2", stationId: "PS2", waterAllocated: 0, efficiency: 0.92 },
-  { towerId: "WT3", stationId: "PS3", waterAllocated: 0, efficiency: 0.94 }
+  { towerId: "WT3", stationId: "PS3", waterAllocated: 0, efficiency: 0.94 },
+  { towerId: "WT1", stationId: "PS4", waterAllocated: 0, efficiency: 0.93 }
 ]
 
 export const mockUserInput: UserInput = {
