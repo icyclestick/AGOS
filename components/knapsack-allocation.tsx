@@ -1,14 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import type { KnapsackResult } from "@/lib/algorithms"
+import type { WaterAllocation } from "@/lib/algorithms"
 
 interface KnapsackAllocationProps {
-  results: KnapsackResult[]
+  results: WaterAllocation[]
   totalSupply: number
 }
 
 export function KnapsackAllocation({ results, totalSupply }: KnapsackAllocationProps) {
-  const totalAllocated = results.filter((r) => r.allocated).reduce((sum, r) => sum + r.barangay.water_needed, 0)
+  const totalAllocated = results.filter((r) => r.allocated).reduce((sum, r) => sum + r.waterAllocated, 0)
 
   return (
     <Card>
@@ -35,9 +35,9 @@ export function KnapsackAllocation({ results, totalSupply }: KnapsackAllocationP
               {results.map((result) => (
                 <tr key={result.barangay.id} className="border-b">
                   <td className="p-2 font-medium">{result.barangay.name}</td>
-                  <td className="p-2">{result.barangay.water_needed.toLocaleString()}</td>
-                  <td className="p-2">{result.barangay.priority}</td>
-                  <td className="p-2">{result.efficiency.toFixed(4)}</td>
+                  <td className="p-2">{result.waterNeeded.toLocaleString()}</td>
+                  <td className="p-2">{result.priority}</td>
+                  <td className="p-2">{result.waterAllocated.toLocaleString()}</td>
                   <td className="p-2">
                     <Badge variant={result.allocated ? "default" : "secondary"}>
                       {result.allocated ? "Yes" : "No"}

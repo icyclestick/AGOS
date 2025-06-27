@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import type { KnapsackResult } from "@/lib/algorithms"
+import type { WaterAllocation } from "@/lib/algorithms"
 
 interface AllocationTableProps {
-  results: KnapsackResult[]
+  results: WaterAllocation[]
 }
 
 export function AllocationTable({ results }: AllocationTableProps) {
@@ -28,13 +28,13 @@ export function AllocationTable({ results }: AllocationTableProps) {
                   <td className="p-2 font-medium">{result.barangay.name}</td>
                   <td className="p-2">
                     {result.allocated ? (
-                      <span className="text-green-600 font-medium">{result.allocatedWater.toLocaleString()}L</span>
+                      <span className="text-green-600 font-medium">{result.waterAllocated.toLocaleString()}L</span>
                     ) : (
                       <span className="text-gray-400">Not allocated</span>
                     )}
                   </td>
                   <td className="p-2">
-                    <Badge variant={result.allocated ? "default" : "secondary"}>{result.barangay.priority}</Badge>
+                    <Badge variant={result.allocated ? "default" : "secondary"}>{result.priority}</Badge>
                   </td>
                 </tr>
               ))}

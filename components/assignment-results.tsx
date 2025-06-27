@@ -1,14 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import type { AssignmentResult } from "@/lib/algorithms"
+import type { StationAssignment } from "@/lib/supabase"
 
 interface AssignmentResultsProps {
-  results: AssignmentResult[]
+  results: StationAssignment[]
 }
 
 export function AssignmentResults({ results }: AssignmentResultsProps) {
-  const totalCost = results.reduce((sum, r) => sum + r.totalCost, 0)
-  const totalSent = results.reduce((sum, r) => sum + r.totalSent, 0)
+  const totalCost = results.reduce((sum, r) => sum + r.totalWaterDelivered, 0)
+  const totalSent = results.reduce((sum, r) => sum + r.totalWaterDelivered, 0)
 
   return (
     <Card>
@@ -47,9 +47,8 @@ export function AssignmentResults({ results }: AssignmentResultsProps) {
                       )}
                     </div>
                   </td>
-                  <td className="p-2">{result.totalSent.toLocaleString()}</td>
-                  <td className="p-2">{result.capacityLeft.toLocaleString()}</td>
-                  <td className="p-2">{result.totalCost}</td>
+                  <td className="p-2">{result.totalWaterDelivered.toLocaleString()}</td>
+                  <td className="p-2">{result.totalDistance.toFixed(1)}</td>
                 </tr>
               ))}
             </tbody>
