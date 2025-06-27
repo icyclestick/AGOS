@@ -142,11 +142,11 @@ export const mockBarangays: Barangay[] = [
 ]
 
 export const mockLiveBarangayData: LiveBarangayData[] = [
-  { barangayId: "B1", currentFlowRate: 79, dropRate: 2, threshold: 75.41 },
-  { barangayId: "B2", currentFlowRate: 35 , dropRate: 2.7, threshold: 32.27 },
-  { barangayId: "B3", currentFlowRate: 80 , dropRate: 1.6, threshold: 76.44 },
-  { barangayId: "B4", currentFlowRate: 61 , dropRate: 2.5, threshold: 63.03 },
-  { barangayId: "B5", currentFlowRate: 70 , dropRate: 1.2, threshold: 74.23 }
+  { barangayId: "B1", currentFlowRate: 79, dropRate: 2, threshold: 75.4 },
+  { barangayId: "B2", currentFlowRate: 35 , dropRate: 2.7, threshold: 32.3 },
+  { barangayId: "B3", currentFlowRate: 80 , dropRate: 1.6, threshold: 76.4 },
+  { barangayId: "B4", currentFlowRate: 61 , dropRate: 2.5, threshold: 63.0 },
+  { barangayId: "B5", currentFlowRate: 70 , dropRate: 1.2, threshold: 74.2 }
 ]
 
 export const mockLiveTowerData: LiveTowerData[] = [

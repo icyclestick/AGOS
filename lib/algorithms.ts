@@ -38,9 +38,16 @@ export function predictShortages(
       (liveData.currentFlowRate - threshold) / liveData.dropRate :
       Infinity
     const fScore = gScore + hScore
+    
+    // Calculate dynamic target flow rate for this barangay
+    const dropRatePerSecond = liveData.dropRate / 3600;
+    const targetFlowRate = threshold + (dropRatePerSecond * userInput.emergencyDuration * 3600);
+    
     let status: "Safe" | "Warning" | "Critical" = "Safe"
     if (liveData.currentFlowRate < threshold) {
       status = "Critical"
+    } else if (liveData.currentFlowRate < targetFlowRate) {
+      status = "Warning" // Will need water during emergency
     } else if (liveData.currentFlowRate === threshold || hScore <= 1) {
       status = "Warning"
     }
