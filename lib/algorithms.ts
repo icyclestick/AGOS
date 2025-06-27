@@ -19,7 +19,6 @@ export function predictShortages(
   liveBarangayData: LiveBarangayData[],
   userInput: UserInput
 ): ShortagePrediction[] {
-  const threshold = 20; // L/s threshold for safety
   const predictions: ShortagePrediction[] = barangays.map(barangay => {
     const liveData = liveBarangayData.find(d => d.barangayId === barangay.id)
     if (!liveData) {
@@ -32,6 +31,8 @@ export function predictShortages(
         status: "Safe"
       }
     }
+    
+    const threshold = liveData.threshold; // Use individual barangay threshold
     const gScore = 50 - liveData.currentFlowRate
     const hScore = liveData.dropRate > 0 ?
       (liveData.currentFlowRate - threshold) / liveData.dropRate :
@@ -115,7 +116,7 @@ export function allocateWater(
       }
       
       // Calculate dynamic target flow rate for this barangay
-      const threshold = 20; // L/s threshold for safety
+      const threshold = liveData.threshold; // Use individual barangay threshold
       const dropRatePerSecond = liveData.dropRate / 3600; // convert L/s/hr to L/s
       const targetFlowRate = threshold + (dropRatePerSecond * userInput.emergencyDuration * 3600);
       
@@ -150,7 +151,7 @@ export function allocateWater(
         const flowRateAfterEmergency = Math.max(0, currentFlowRate - (dropRatePerSecond * userInput.emergencyDuration * 3600));
         
         // Calculate dynamic target flow rate for this barangay
-        const threshold = 20; // L/s threshold for safety
+        const threshold = liveData.threshold; // Use individual barangay threshold
         const targetFlowRate = threshold + (dropRatePerSecond * userInput.emergencyDuration * 3600);
         
         // Calculate maximum safe donation: (current flow rate - target flow rate) * 3600

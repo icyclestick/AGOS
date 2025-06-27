@@ -33,6 +33,7 @@ import {
   type StationAssignment,
 } from "@/lib/algorithms";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import ManilaMap from "@/components/manila-map";
 
 export default function WaterDistributionDashboard() {
   // Static infrastructure data
@@ -226,138 +227,10 @@ export default function WaterDistributionDashboard() {
           <div className="lg:row-span-3">
             <Card>
               <CardHeader>
-                <CardTitle>System Overview</CardTitle>
+                <CardTitle>System Overview Map</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-96 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-4 relative">
-                  {/* Water Towers */}
-                  <div className="absolute top-4 left-4">
-                    <h4 className="text-sm font-semibold text-blue-800 mb-2">
-                      Water Towers
-                    </h4>
-                    <div className="space-y-1">
-                      {waterTowers.map((tower, index) => {
-                        const towerData = liveTowerData.find(
-                          (t) => t.towerId === tower.id
-                        );
-                        return (
-                          <div
-                            key={tower.id}
-                            className="flex items-center gap-2 text-xs"
-                          >
-                            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                            <span className="font-medium">{tower.name}</span>
-                            <span className="text-gray-600">
-                              {towerData?.currentWater.toLocaleString()}L
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Pumping Stations */}
-                  <div className="absolute top-4 right-4">
-                    <h4 className="text-sm font-semibold text-green-800 mb-2">
-                      Pumping Stations
-                    </h4>
-                    <div className="space-y-1">
-                      {pumpingStations.map((station, index) => {
-                        // Check if this station has any assigned barangays in the assignment results
-                        const stationAssignment = systemState?.stationAssignments.find(
-                          (sa) => sa.station.id === station.id
-                        );
-                        const hasAllocation = stationAssignment && stationAssignment.assignedBarangays.length > 0;
-                        return (
-                          <div
-                            key={station.id}
-                            className="flex items-center gap-2 text-xs"
-                          >
-                            <div
-                              className={`w-3 h-3 rounded-full ${
-                                hasAllocation
-                                  ? "bg-green-500"
-                                  : "bg-gray-400"
-                              }`}
-                            ></div>
-                            <span className="font-medium">{station.name}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Barangays */}
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <h4 className="text-sm font-semibold text-purple-800 mb-2">
-                      Barangays
-                    </h4>
-                    <div className="grid grid-cols-2 gap-2">
-                      {barangays.map((barangay) => {
-                        const liveData = liveBarangayData.find(
-                          (b) => b.barangayId === barangay.id
-                        );
-                        const prediction =
-                          systemState?.shortagePredictions.find(
-                            (p) => p.barangay.id === barangay.id
-                          );
-                        return (
-                          <div
-                            key={barangay.id}
-                            className="flex items-center gap-2 text-xs p-1 bg-white/50 rounded"
-                          >
-                            <div
-                              className={`w-2 h-2 rounded-full ${
-                                prediction?.status === "Critical"
-                                  ? "bg-red-500"
-                                  : prediction?.status === "Warning"
-                                  ? "bg-yellow-500"
-                                  : "bg-green-500"
-                              }`}
-                            ></div>
-                            <span className="font-medium">{barangay.name}</span>
-                            <span className="text-gray-600">
-                              {liveData?.currentFlowRate || 0}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Legend */}
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                    <div className="bg-white/80 p-3 rounded-lg shadow-sm">
-                      <h4 className="text-sm font-semibold mb-2">Legend</h4>
-                      <div className="space-y-1 text-xs">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                          <span>Water Towers</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                          <span>Pumping Stations (Allocated)</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                          <span>Pumping Stations (Not Allocated)</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                          <span>Barangays (Critical)</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                          <span>Barangays (Warning)</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          <span>Barangays (Safe)</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <ManilaMap className="h-96 w-full" />
               </CardContent>
             </Card>
           </div>
@@ -404,7 +277,7 @@ export default function WaterDistributionDashboard() {
                                 const currentFlowRate = liveData?.currentFlowRate || 0;
                                 // Current water supply based on 1 hour, not emergency duration
                                 const currentWaterSupply = currentFlowRate * 3600; // 1 hour in seconds
-                                const threshold = 20; // L/s threshold for safety
+                                const threshold = liveData?.threshold || 20; // Use individual barangay threshold
                                 const dropRate = liveData?.dropRate || 0;
                                 const dropRatePerSecond = dropRate / 3600; // convert L/s/hr to L/s
                                 const emergencyDuration = systemState.userInput.emergencyDuration;
@@ -475,7 +348,7 @@ export default function WaterDistributionDashboard() {
                               {systemState.shortagePredictions
                                 .map((prediction) => {
                                   const liveData = systemState.liveBarangayData.find(d => d.barangayId === prediction.barangay.id);
-                                  const threshold = 20; // L/s threshold for safety
+                                  const threshold = liveData?.threshold || 20; // Use individual barangay threshold
                                   const dropRate = liveData?.dropRate || 0;
                                   const dropRatePerSecond = dropRate / 3600; // convert L/s/hr to L/s
                                   const emergencyDuration = systemState.userInput.emergencyDuration;
@@ -522,7 +395,7 @@ export default function WaterDistributionDashboard() {
                                   // Filter to show only barangays that need water
                                   const prediction = systemState.shortagePredictions[index];
                                   const liveData = systemState.liveBarangayData.find(d => d.barangayId === prediction.barangay.id);
-                                  const threshold = 20;
+                                  const threshold = liveData?.threshold || 20;
                                   const dropRate = liveData?.dropRate || 0;
                                   const dropRatePerSecond = dropRate / 3600;
                                   const emergencyDuration = systemState.userInput.emergencyDuration;
@@ -539,7 +412,7 @@ export default function WaterDistributionDashboard() {
                                   {systemState.shortagePredictions
                                     .filter(prediction => {
                                       const liveData = systemState.liveBarangayData.find(d => d.barangayId === prediction.barangay.id);
-                                      const threshold = 20;
+                                      const threshold = liveData?.threshold || 20;
                                       const dropRate = liveData?.dropRate || 0;
                                       const dropRatePerSecond = dropRate / 3600;
                                       const emergencyDuration = systemState.userInput.emergencyDuration;
@@ -593,7 +466,7 @@ export default function WaterDistributionDashboard() {
                                     const currentFlowRate = liveData.currentFlowRate;
                                     const dropRatePerSecond = liveData.dropRate / 3600;
                                     
-                                    const threshold = 20;
+                                    const threshold = liveData.threshold || 20;
                                     const targetFlowRate = threshold + (dropRatePerSecond * systemState.userInput.emergencyDuration * 3600);
                                     
                                     // Simple calculation: (Current Flow Rate - Safe Flow Rate) × 3600
@@ -650,7 +523,7 @@ export default function WaterDistributionDashboard() {
                                         const currentFlowRate = liveData.currentFlowRate;
                                         const dropRatePerSecond = liveData.dropRate / 3600;
                                         
-                                        const threshold = 20;
+                                        const threshold = liveData.threshold || 20;
                                         const targetFlowRate = threshold + (dropRatePerSecond * systemState.userInput.emergencyDuration * 3600);
                                         
                                         // Simple calculation: (Current Flow Rate - Safe Flow Rate) × 3600
@@ -858,7 +731,7 @@ export default function WaterDistributionDashboard() {
                                 
                                 // Calculate target flow rate for this barangay
                                 const emergencyDurationHours = systemState.userInput.emergencyDuration;
-                                const threshold = 20;
+                                const threshold = liveData?.threshold || 20;
                                 const dropRate = liveData?.dropRate || 0;
                                 const dropRatePerSecond = dropRate / 3600;
                                 const targetFlowRate = threshold + (dropRatePerSecond * emergencyDurationHours * 3600);

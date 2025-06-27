@@ -1,138 +1,133 @@
-"use client"
+"use client";
 
-import { useEffect, useRef } from "react"
-import { Card } from "@/components/ui/card"
-import type { Barangay, PumpingStation } from "@/lib/supabase"
-import type { ShortageResult } from "@/lib/algorithms"
+import { useEffect, useRef } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import { mockBarangays, mockPumpingStations, mockWaterTowers } from '@/lib/supabase';
+import { Card } from '@/components/ui/card';
+
+// Fix for default markers in Leaflet with Next.js
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 interface ManilaMapProps {
-  barangays: Barangay[]
-  stations: PumpingStation[]
-  shortageResults: ShortageResult[]
-  selectedBarangay: Barangay | null
-  onBarangayClick: (barangay: Barangay) => void
+  className?: string;
 }
 
-export function ManilaMap({ barangays, stations, shortageResults, selectedBarangay, onBarangayClick }: ManilaMapProps) {
-  const mapRef = useRef<HTMLDivElement>(null)
-  const mapInstanceRef = useRef<any>(null)
-  const markersRef = useRef<any[]>([])
+export default function ManilaMap({ className = "h-96 w-full" }: ManilaMapProps) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !mapRef.current) return
+    if (!mapRef.current || mapInstanceRef.current) return;
 
-    const initMap = async () => {
-      // Dynamically import Leaflet
-      const L = (await import("leaflet")).default
+    // Initialize map centered on Manila
+    const map = L.map(mapRef.current).setView([14.5995, 120.9842], 12);
+    mapInstanceRef.current = map;
 
-      // Import CSS
-      await import("leaflet/dist/leaflet.css")
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
 
-      // Fix for default markers
-      delete (L.Icon.Default.prototype as any)._getIconUrl
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-        iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-        shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-      })
+    // Custom icons for different types of markers
+    const barangayIcon = L.divIcon({
+      className: 'custom-div-icon',
+      html: `<div style="background-color: #3b82f6; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+      iconSize: [12, 12],
+      iconAnchor: [6, 6]
+    });
 
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove()
-      }
+    const stationIcon = L.divIcon({
+      className: 'custom-div-icon',
+      html: `<div style="background-color: #10b981; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+      iconSize: [16, 16],
+      iconAnchor: [8, 8]
+    });
 
-      // Initialize map centered on Manila
-      const map = L.map(mapRef.current).setView([14.5995, 120.9842], 12)
+    const towerIcon = L.divIcon({
+      className: 'custom-div-icon',
+      html: `<div style="background-color: #f59e0b; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+      iconSize: [14, 14],
+      iconAnchor: [7, 7]
+    });
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap contributors",
-      }).addTo(map)
+    // Add barangay markers
+    mockBarangays.forEach(barangay => {
+      const marker = L.marker([barangay.location.lat, barangay.location.lng], {
+        icon: barangayIcon
+      }).addTo(map);
 
-      mapInstanceRef.current = map
+      marker.bindPopup(`
+        <div class="p-2">
+          <h3 class="font-semibold text-blue-600">${barangay.name}</h3>
+          <p class="text-sm text-gray-600">Population: ${barangay.population.toLocaleString()}</p>
+          <p class="text-xs text-gray-500">Location: ${barangay.location.lat.toFixed(4)}, ${barangay.location.lng.toFixed(4)}</p>
+        </div>
+      `);
+    });
 
-      // Clear existing markers
-      markersRef.current.forEach((marker) => marker.remove())
-      markersRef.current = []
+    // Add pumping station markers
+    mockPumpingStations.forEach(station => {
+      const marker = L.marker([station.location.lat, station.location.lng], {
+        icon: stationIcon
+      }).addTo(map);
 
-      // Add barangay markers
-      barangays.forEach((barangay) => {
-        const shortageData = shortageResults.find((r) => r.barangay.id === barangay.id)
-        const status = shortageData?.status || "Safe"
+      marker.bindPopup(`
+        <div class="p-2">
+          <h3 class="font-semibold text-green-600">${station.name}</h3>
+          <p class="text-xs text-gray-500">Location: ${station.location.lat.toFixed(4)}, ${station.location.lng.toFixed(4)}</p>
+        </div>
+      `);
+    });
 
-        const color = status === "Critical" ? "#ef4444" : status === "Warning" ? "#f59e0b" : "#10b981"
+    // Add water tower markers
+    mockWaterTowers.forEach(tower => {
+      const marker = L.marker([tower.location.lat, tower.location.lng], {
+        icon: towerIcon
+      }).addTo(map);
 
-        const marker = L.circleMarker([barangay.latitude, barangay.longitude], {
-          radius: 8,
-          fillColor: color,
-          color: "#ffffff",
-          weight: 2,
-          opacity: 1,
-          fillOpacity: 0.8,
-        })
+      marker.bindPopup(`
+        <div class="p-2">
+          <h3 class="font-semibold text-orange-600">${tower.name}</h3>
+          <p class="text-sm text-gray-600">Capacity: ${tower.maxCapacity.toLocaleString()}L</p>
+          <p class="text-xs text-gray-500">Location: ${tower.location.lat.toFixed(4)}, ${tower.location.lng.toFixed(4)}</p>
+        </div>
+      `);
+    });
 
-        const popupContent = `
-          <div class="p-2">
-            <h3 class="font-bold text-lg">${barangay.name}</h3>
-            <p class="text-sm text-gray-600">Population: ${barangay.population.toLocaleString()}</p>
-            <p class="text-sm">Current Water: ${barangay.current_level.toLocaleString()}L</p>
-            <p class="text-sm">Daily Consumption: ${barangay.daily_consumption.toLocaleString()}L</p>
-            <p class="text-sm">Days to Shortage: ${shortageData?.daysToShortage || "N/A"}</p>
-            <div class="mt-2">
-              <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                status === "Critical"
-                  ? "bg-red-100 text-red-800"
-                  : status === "Warning"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-green-100 text-green-800"
-              }">
-                ${status}
-              </span>
-            </div>
-          </div>
-        `
-
-        marker.bindPopup(popupContent)
-        marker.on("click", () => onBarangayClick(barangay))
-        marker.addTo(map)
-        markersRef.current.push(marker)
-      })
-
-      // Add pumping station markers
-      stations.forEach((station) => {
-        const marker = L.marker([station.latitude, station.longitude], {
-          icon: L.divIcon({
-            className: "custom-div-icon",
-            html: `<div class="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">PS</div>`,
-            iconSize: [24, 24],
-            iconAnchor: [12, 12],
-          }),
-        })
-
-        const popupContent = `
-          <div class="p-2">
-            <h3 class="font-bold text-lg">${station.name}</h3>
-            <p class="text-sm">Capacity: ${station.capacity.toLocaleString()}L</p>
-          </div>
-        `
-
-        marker.bindPopup(popupContent)
-        marker.addTo(map)
-        markersRef.current.push(marker)
-      })
-    }
-
-    initMap()
-
+    // Cleanup function
     return () => {
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove()
-        mapInstanceRef.current = null
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
       }
-    }
-  }, [barangays, stations, shortageResults])
+    };
+  }, []);
 
   return (
-    <Card className="h-full">
-      <div ref={mapRef} className="w-full h-full min-h-[600px] rounded-lg" />
-    </Card>
-  )
-}
+    <div className={className}>
+      <Card className="h-full">
+        <div ref={mapRef} className="h-full w-full rounded-lg" />
+      </Card>
+      <div className="mt-2 flex items-center justify-center space-x-4 text-xs">
+        <div className="flex items-center space-x-1">
+          <div className="w-3 h-3 bg-blue-500 rounded-full border border-white shadow-sm"></div>
+          <span>Barangays</span>
+        </div>
+        <div className="flex items-center space-x-1">
+          <div className="w-4 h-4 bg-green-500 rounded-full border border-white shadow-sm"></div>
+          <span>Pumping Stations</span>
+        </div>
+        <div className="flex items-center space-x-1">
+          <div className="w-3.5 h-3.5 bg-orange-500 rounded-full border border-white shadow-sm"></div>
+          <span>Water Towers</span>
+        </div>
+      </div>
+    </div>
+  );
+} 

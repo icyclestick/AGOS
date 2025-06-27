@@ -49,6 +49,7 @@ export interface LiveBarangayData {
   barangayId: string
   currentFlowRate: number // L/s from sensors
   dropRate: number // L/s per hour (depreciation rate)
+  threshold: number // L/s threshold for safety
 }
 
 export interface LiveTowerData {
@@ -141,11 +142,11 @@ export const mockBarangays: Barangay[] = [
 ]
 
 export const mockLiveBarangayData: LiveBarangayData[] = [
-  { barangayId: "B1", currentFlowRate: 75.41, dropRate: 2 },
-  { barangayId: "B2", currentFlowRate: 32.27 , dropRate: 2.7 },
-  { barangayId: "B3", currentFlowRate: 76.44 , dropRate: 1.6 },
-  { barangayId: "B4", currentFlowRate: 63.03 , dropRate: 2.5 },
-  { barangayId: "B5", currentFlowRate: 74.23 , dropRate: 1.2 }
+  { barangayId: "B1", currentFlowRate: 79, dropRate: 2, threshold: 75.41 },
+  { barangayId: "B2", currentFlowRate: 35 , dropRate: 2.7, threshold: 32.27 },
+  { barangayId: "B3", currentFlowRate: 80 , dropRate: 1.6, threshold: 76.44 },
+  { barangayId: "B4", currentFlowRate: 61 , dropRate: 2.5, threshold: 63.03 },
+  { barangayId: "B5", currentFlowRate: 70 , dropRate: 1.2, threshold: 74.23 }
 ]
 
 export const mockLiveTowerData: LiveTowerData[] = [
